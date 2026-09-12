@@ -26,10 +26,19 @@ export default function ReportsPage() {
   const [loading,setLoading] = useState(true);
 
   useEffect(() => {
-    if (!auth) return;
-    return onAuthStateChanged(auth, async u => {
-      if (u) setUser(u);
-      else await signInAnonymously(auth);
+    const firebaseAuth = auth;
+    if (!firebaseAuth) return;
+
+    return onAuthStateChanged(firebaseAuth, async u => {
+      if (u) {
+        setUser(u);
+      } else {
+        try {
+          await signInAnonymously(firebaseAuth);
+        } catch (e) {
+          console.error(e);
+        }
+      }
     });
   }, []);
 
