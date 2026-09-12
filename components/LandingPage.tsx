@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, CheckCircle2, Clock3, MapPin, ShieldCheck, Zap, Menu, Phone, Star } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 const services = [
   {
@@ -27,7 +28,7 @@ const services = [
   }
 ];
 
-const advantages = [
+const advantages: Array<[title: string, text: string, Icon: LucideIcon]> = [
   ["MUDAH", "Dengan layanan berbasis teknologi digital pelanggan dengan mudah mendapatkan service terbaik hanya dalam satu genggaman.", Zap],
   ["CEPAT", "Fitur pencarian teknisi terdekat membantu mempercepat penanganan problem kelistrikan.", Clock3],
   ["BERKUALITAS", "Didukung tenaga ahli listrik yang mumpuni untuk memberikan kualitas layanan yang prima.", ShieldCheck],
