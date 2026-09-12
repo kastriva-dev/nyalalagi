@@ -93,9 +93,24 @@ h2 { font-size:clamp(30px,4vw,48px); line-height:1.08; letter-spacing:-.035em; }
   border-radius:32px; background:linear-gradient(120deg,#ffd21a,#ffe980);
   padding:45px; display:flex; justify-content:space-between; align-items:center; gap:25px;
 }
-.footer { padding:50px 0 35px; background:#171536; color:#fff; }
-.footer-grid { display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px; }
-.footer small { color:#aaa6bf; }
+.footer { padding:38px 0 0; background:#020b12; color:#f4f7fb; border-top:1px solid rgba(255,255,255,.04); }
+.footer-grid { display:grid; grid-template-columns:1.35fr .85fr .95fr 1.45fr; gap:42px; }
+.footer-brand { font-size:24px; font-weight:800; letter-spacing:-.5px; margin-bottom:28px; }
+.footer-address, .footer-contact { color:#c1cbd3; font-size:13px; line-height:1.8; margin:0 0 12px; }
+.footer-contact b { color:#f4f7fb; }
+.footer-column h3, .footer-newsletter h3 { font-size:15px; margin:3px 0 14px; color:#f4f7fb; }
+.footer-column a { display:block; color:#aebbc5; font-size:13px; line-height:1.55; padding:5px 0 5px 14px; position:relative; transition:color .2s; }
+.footer-column a::before { content:'›'; position:absolute; left:0; color:#1eb7f2; font-size:20px; line-height:13px; }
+.footer-column a:hover { color:#fff; }
+.footer-newsletter p { color:#c1cbd3; font-size:13px; line-height:1.65; margin:0 0 26px; max-width:360px; }
+.newsletter-form { display:flex; height:39px; }
+.newsletter-form input { min-width:0; flex:1; background:transparent; border:1px solid #1c2b35; border-right:0; color:#fff; padding:0 12px; outline:none; }
+.newsletter-form button { border:0; background:#276ca8; color:#fff; font-weight:700; padding:0 18px; cursor:pointer; }
+.footer-socials { display:flex; gap:10px; margin-top:20px; }
+.footer-socials a { width:36px; height:36px; border:1px solid #263744; border-radius:50%; display:grid; place-items:center; color:#cbd6dd; }
+.footer-socials a:hover { border-color:#24baf2; color:#24baf2; }
+.footer-bottom { margin-top:34px; border-top:1px solid rgba(255,255,255,.07); padding:18px 0 22px; }
+.footer small { color:#8d9ca7; }
 .mobile-menu { display:none; }
 
 .page-shell { min-height:100vh; }

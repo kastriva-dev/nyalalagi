@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, CheckCircle2, Clock3, MapPin, ShieldCheck, Zap, Menu, Phone, Star } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock3, MapPin, ShieldCheck, Zap, Menu, Phone, Star, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const services = [
@@ -182,24 +182,45 @@ export default function LandingPage() {
 
       <footer id="kontak" className="footer">
         <div className="container footer-grid">
-          <div>
-            <div className="brand" style={{color:"#fff"}}>
-              <Image src="/company/logo.png" alt="" width={42} height={42}/> NyalaLagi
+          <div className="footer-company">
+            <div className="footer-brand">NyalaLagi</div>
+            <p className="footer-address">Bandung Technopark Gedung C<br/>Jl Komunikasi No 1, Sukapura Kabupaten Bandung</p>
+            <p className="footer-contact"><b>Phone:</b> +62 851-9591-2262<br/><b>Email:</b> cs@nyalalagi.com</p>
+            <div className="footer-socials" aria-label="Media sosial NyalaLagi">
+              <a href="#" aria-label="X"><Twitter size={17}/></a>
+              <a href="#" aria-label="Facebook"><Facebook size={17}/></a>
+              <a href="#" aria-label="Instagram"><Instagram size={17}/></a>
+              <a href="#" aria-label="LinkedIn"><Linkedin size={17}/></a>
             </div>
-            <p style={{color:"#aaa6bf",lineHeight:1.8}}>PT NYALALAGI SOLUSI ANDALAN<br/>Mudah, Cepat, Berkualitas & Andalan.</p>
           </div>
-          <div>
-            <h3>Kontak</h3>
-            <p><Phone size={15} style={{verticalAlign:"middle",marginRight:7}}/> +62 851 9591 2262</p>
-            <p>cs@nyalalagi.com</p>
+          <div className="footer-column">
+            <h3>Tautan Web</h3>
+            <a href="#">Beranda</a>
+            <a href="#tentang">Tentang</a>
+            <a href="#layanan">Layanan</a>
+            <a href="#">Portfolio</a>
+            <a href="#">Testimonial</a>
+            <a href="#">Mitra Teknisi</a>
+            <a href="#kontak">Kontak</a>
           </div>
-          <div>
-            <h3>Alamat</h3>
-            <p style={{color:"#aaa6bf"}}>Pasindangan No 34, Cirebon</p>
-            <p style={{color:"#aaa6bf"}}>www.nyalalagi.com</p>
+          <div className="footer-column">
+            <h3>Produk Layanan</h3>
+            <a href="#layanan">Perbaikan Instalasi</a>
+            <a href="#layanan">Instalasi Listrik Baru</a>
+            <a href="#layanan">Penerangan Jalan Umum</a>
+            <a href="#layanan">Penangkal Petir</a>
+            <a href="#layanan">Dll</a>
+          </div>
+          <div className="footer-newsletter">
+            <h3>Our Newsletter</h3>
+            <p>Subscribe to our newsletter and receive the latest news about our products and services!</p>
+            <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
+              <input type="email" aria-label="Email newsletter" placeholder="" />
+              <button type="submit">Subscribe</button>
+            </form>
           </div>
         </div>
-        <div className="container" style={{marginTop:35,borderTop:"1px solid rgba(255,255,255,.1)",paddingTop:20}}>
+        <div className="container footer-bottom">
           <small>© {new Date().getFullYear()} PT Nyalalagi Solusi Andalan. All rights reserved.</small>
         </div>
       </footer>
