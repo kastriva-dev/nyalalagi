@@ -1,0 +1,13 @@
+{
+  "name": "NyalaLagi Customer",
+  "short_name": "NyalaLagi",
+  "description": "Layanan laporan gangguan kelistrikan NyalaLagi",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f8fc",
+  "theme_color": "#ffd21a",
+  "lang": "id",
+  "icons": [
+    {"src": "/company/logo.png", "sizes": "156x156", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
