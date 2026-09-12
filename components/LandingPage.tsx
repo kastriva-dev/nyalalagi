@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect } from "react";
 import { ArrowRight, CheckCircle2, Clock3, MapPin, ShieldCheck, Zap, Menu, Phone, Star, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -36,6 +37,20 @@ const advantages: Array<[title: string, text: string, Icon: LucideIcon]> = [
 ];
 
 export default function LandingPage() {
+  useEffect(() => {
+    const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-scroll-reveal]"));
+    if (!elements.length) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        entry.target.classList.toggle("is-visible", entry.isIntersecting);
+      });
+    }, { threshold: 0.16, rootMargin: "0px 0px -8% 0px" });
+
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <main>
       <header className="nav">
@@ -79,10 +94,10 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="hero-visual">
-            <img className="photo-main" src="/company/hero.jpg" alt="Teknisi NyalaLagi" />
-            <img className="photo-small ps1" src="/company/hero-2.jpg" alt="Teknisi listrik" />
-            <img className="photo-small ps2" src="/company/hero-3.jpg" alt="Pekerjaan listrik" />
-            <img className="photo-small ps3" src="/company/hero-4.jpg" alt="Panel listrik" />
+            <img className="photo-main scroll-reveal" data-scroll-reveal src="/company/hero.jpg" alt="Teknisi NyalaLagi" />
+            <img className="photo-small ps1 scroll-reveal scroll-delay-1" data-scroll-reveal src="/company/hero-2.jpg" alt="Teknisi listrik" />
+            <img className="photo-small ps2 scroll-reveal scroll-delay-2" data-scroll-reveal src="/company/hero-3.jpg" alt="Pekerjaan listrik" />
+            <img className="photo-small ps3 scroll-reveal scroll-delay-3" data-scroll-reveal src="/company/hero-4.jpg" alt="Panel listrik" />
             <div className="floating-card">
               <div className="iconbox"><MapPin size={21}/></div>
               <div><b>Teknisi terdekat</b><br/><small className="muted">Permintaan dapat diproses berbasis lokasi</small></div>
@@ -137,7 +152,7 @@ export default function LandingPage() {
           <div className="grid-4" style={{marginTop:30}}>
             {services.map((s) => (
               <article className="card service-card" key={s.title}>
-                <img src={s.image} alt={s.title}/>
+                <img className="scroll-reveal" data-scroll-reveal src={s.image} alt={s.title}/>
                 <div className="service-body">
                   <h3>{s.title}</h3>
                   <p className="muted">{s.text}</p>
@@ -221,7 +236,7 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="container footer-bottom">
-          <small>© {new Date().getFullYear()} PT Nyalalagi Solusi Andalan. All rights reserved.</small>
+          <small>© {new Date().getFullYear()} <strong>PT Nyalalagi Solusi Andalan</strong>. All rights reserved.</small>
         </div>
       </footer>
 
