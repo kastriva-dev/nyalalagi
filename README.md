@@ -12,7 +12,7 @@ Customer WebApp/PWA untuk PT Nyalalagi Solusi Andalan.
 - Pilih titik lokasi langsung di peta
 - Menyimpan latitude, longitude, accuracy dan timestamp
 - Upload sampai 5 foto kerusakan
-- Firebase Authentication (anonymous customer session)
+- Firebase Authentication (email/password customer account)
 - Firestore untuk laporan
 - Firebase Storage untuk foto
 - Halaman Laporan Saya dengan realtime listener
@@ -41,7 +41,7 @@ npm run dev
 Buat/gunakan Firebase Project milik NyalaLagi.
 
 Aktifkan:
-1. Authentication → Anonymous
+1. Authentication → Sign-in method → Email/Password
 2. Cloud Firestore
 3. Storage
 

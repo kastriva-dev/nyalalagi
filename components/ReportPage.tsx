@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Camera, CheckCircle2, Loader2, MapPin, Send, X, Zap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged, signInAnonymously, User } from "firebase/auth";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, firebaseReady } from "@/lib/firebase";
 import { createReport } from "@/lib/report";
 import LocationPicker from "./LocationPicker";
@@ -34,16 +34,9 @@ export default function ReportPage() {
     const firebaseAuth = auth;
     if (!firebaseAuth) return;
 
-    return onAuthStateChanged(firebaseAuth, async (u) => {
-      if (u) {
-        setUser(u);
-      } else {
-        try {
-          await signInAnonymously(firebaseAuth);
-        } catch (e) {
-          console.error(e);
-        }
-      }
+    return onAuthStateChanged(firebaseAuth, (u) => {
+      if (u && !u.isAnonymous) setUser(u);
+      else window.location.href = "/login";
     });
   }, []);
 
