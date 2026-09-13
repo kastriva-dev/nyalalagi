@@ -576,3 +576,196 @@ body {
   .ps3 { width: 35%; height: 115px; }
   .floating-card { max-width: 78%; padding: 12px; font-size: 12px; }
 }
+
+/* =========================================================
+   DEWI-INSPIRED LANDING TOP — NyalaLagi content preserved
+   ========================================================= */
+.dewi-hero {
+  min-height: 100vh;
+  padding: 110px 0 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #15222b;
+  position: relative;
+  overflow: hidden;
+}
+.dewi-hero .hero-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image: url('/company/hero.jpg');
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.04);
+  animation: dewiHeroZoom 12s ease-out both;
+}
+.dewi-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(21,34,43,.68);
+}
+.dewi-hero::after {
+  z-index: 0;
+  background: linear-gradient(110deg, rgba(5,12,17,.45), rgba(21,34,43,.18) 48%, rgba(5,12,17,.52));
+  animation: none;
+}
+.hero-dewi-content {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.dewi-hero .hero-copy {
+  width: min(980px, 100%);
+  margin: 0 auto;
+}
+.dewi-hero .eyebrow {
+  background: rgba(255,255,255,.10);
+  color: rgba(255,255,255,.92);
+  border: 1px solid rgba(255,255,255,.20);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-size: 12px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
+}
+.dewi-hero h1 {
+  color: #fff;
+  font-size: clamp(38px, 5.4vw, 68px);
+  line-height: 1.05;
+  letter-spacing: -.035em;
+  max-width: 920px;
+  margin: 22px auto 0;
+  text-shadow: 0 6px 28px rgba(0,0,0,.26);
+}
+.dewi-hero .gradient-text {
+  background: none;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+}
+.dewi-hero .hero-copy > p {
+  max-width: 900px;
+  margin: 16px auto 0;
+  color: rgba(255,255,255,.86);
+  font-size: clamp(16px, 2vw, 21px);
+  line-height: 1.65;
+  text-shadow: 0 3px 15px rgba(0,0,0,.28);
+}
+.dewi-hero .hero-buttons {
+  justify-content: center;
+  margin-top: 30px;
+}
+.dewi-hero .btn-primary {
+  background: #ff4a17;
+  color: #fff;
+  border-color: #ff4a17;
+  border-radius: 4px;
+  min-height: 44px;
+  padding: 0 28px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  box-shadow: 0 14px 34px rgba(255,74,23,.28);
+}
+.dewi-hero .btn-primary:hover {
+  background: #ff6337;
+  border-color: #ff6337;
+}
+.dewi-hero .btn-whatsapp {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.82);
+  color: #fff;
+  border-radius: 4px;
+  box-shadow: none;
+}
+.dewi-hero .btn-whatsapp:hover { background: rgba(255,255,255,.10); }
+.dewi-hero .hero-trust-row {
+  justify-content: center;
+  color: rgba(255,255,255,.84);
+  margin-top: 27px;
+}
+.dewi-hero .hero-trust-row svg { color: #ff6b3b; }
+
+/* Dewi-like transparent header over the hero, then dark glass on scroll. */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0);
+  border-bottom-color: transparent;
+  box-shadow: none;
+  color: #fff;
+  padding: 0;
+}
+.nav .brand { color: #fff; }
+.nav .nav-links { color: rgba(255,255,255,.88); }
+.nav .nav-links a {
+  position: relative;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: .01em;
+  color: inherit;
+  padding: 5px 1px;
+}
+.nav .nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -7px;
+  width: 0;
+  height: 2px;
+  background: #ff4a17;
+  transition: width .3s ease;
+}
+.nav .nav-links a:hover::after { width: 100%; }
+.nav .nav-actions .btn-secondary {
+  background: transparent;
+  border-color: rgba(255,255,255,.72);
+  color: #fff;
+  border-radius: 4px;
+}
+.nav .nav-actions .btn-primary {
+  background: #ff4a17;
+  border-color: #ff4a17;
+  color: #fff;
+  border-radius: 4px;
+}
+.nav.nav-scrolled {
+  background: rgba(21,34,43,.92);
+  border-bottom-color: rgba(255,255,255,.08);
+  box-shadow: 0 8px 30px rgba(0,0,0,.20);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.nav.nav-scrolled .nav-inner { min-height: 68px; }
+.mobile-menu { color: #fff; }
+.mobile-panel { top: 76px; }
+
+@keyframes dewiHeroZoom {
+  from { transform: scale(1.12); opacity: .72; }
+  to { transform: scale(1.04); opacity: 1; }
+}
+
+@media (max-width: 1100px) {
+  .nav-links { gap: 16px; }
+  .nav .nav-actions .btn { padding: 0 13px; }
+}
+@media (max-width: 900px) {
+  .nav-links, .nav-actions { display: none; }
+  .mobile-menu { display: block; }
+  .dewi-hero { min-height: 88vh; padding-top: 100px; }
+  .dewi-hero h1 { font-size: clamp(36px, 9vw, 56px); }
+}
+@media (max-width: 560px) {
+  .dewi-hero { min-height: 86vh; padding: 100px 0 55px; }
+  .dewi-hero .hero-copy > p { font-size: 15px; }
+  .dewi-hero .hero-buttons { flex-direction: column; align-items: stretch; }
+  .dewi-hero .hero-buttons .btn { width: 100%; }
+  .dewi-hero .hero-trust-row { gap: 10px 16px; font-size: 11px; }
+}

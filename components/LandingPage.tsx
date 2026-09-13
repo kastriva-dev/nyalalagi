@@ -131,9 +131,11 @@ export default function LandingPage() {
         </div>
       </div>
 
-      <section className="hero">
-        <div className="hero-orb hero-orb-one" aria-hidden="true" /><div className="hero-orb hero-orb-two" aria-hidden="true" /><div className="hero-grid container">
-          <div className="hero-copy hero-stagger scroll-reveal" data-scroll-reveal>
+      <section className="hero dewi-hero">
+        <div className="hero-orb hero-orb-one" aria-hidden="true" /><div className="hero-orb hero-orb-two" aria-hidden="true" />
+        <div className="hero-backdrop" aria-hidden="true" />
+        <div className="hero-dewi-content container">
+          <div className="hero-copy hero-stagger" data-scroll-reveal>
             <span className="eyebrow"><Zap size={15}/> Mudah, Cepat, Berkualitas, Andalan</span>
             <h1>NyalaLagi <span className="gradient-text">Penyedia Teknisi Listrik Andalan Anda</span></h1>
             <p className="muted">NyalaLagi adalah platform digital di bawah naungan <b>PT Nyalalagi Solusi Andalan</b> yang menghubungkan masyarakat dengan tenaga ahli kelistrikan melalui layanan yang mudah, cepat, berkualitas dan menjadi andalan.</p>
@@ -145,16 +147,6 @@ export default function LandingPage() {
               <span><CheckCircle2 size={17}/> Teknisi terdaftar</span>
               <span><MapPin size={17}/> Berbasis lokasi</span>
               <span><ShieldCheck size={17}/> Layanan aman</span>
-            </div>
-          </div>
-          <div className="hero-visual hero-visual-motion">
-            <img className="photo-main scroll-reveal" data-scroll-reveal src="/company/hero.jpg" alt="Teknisi NyalaLagi" />
-            <img className="photo-small ps1 scroll-reveal scroll-delay-1" data-scroll-reveal src="/company/hero-2.jpg" alt="Teknisi listrik" />
-            <img className="photo-small ps2 scroll-reveal scroll-delay-2" data-scroll-reveal src="/company/hero-3.jpg" alt="Pekerjaan listrik" />
-            <img className="photo-small ps3 scroll-reveal scroll-delay-3" data-scroll-reveal src="/company/hero-4.jpg" alt="Panel listrik" />
-            <div className="floating-card scroll-reveal scroll-delay-2" data-scroll-reveal>
-              <div className="iconbox"><MapPin size={21}/></div>
-              <div><b>Teknisi terdekat</b><br/><small className="muted">Permintaan diproses berbasis lokasi</small></div>
             </div>
           </div>
         </div>
