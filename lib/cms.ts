@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "./firebase";
 
 export type CMSService = { title: string; text: string; image: string };
@@ -25,7 +25,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     title: "NyalaLagi",
     highlight: "Penyedia Teknisi Listrik Andalan Anda",
     description: "NyalaLagi adalah platform digital di bawah naungan PT Nyalalagi Solusi Andalan yang menghubungkan masyarakat dengan tenaga ahli kelistrikan melalui layanan yang mudah, cepat, berkualitas dan menjadi andalan.",
-    image: "/company/nyala-hero.jpg"
+    image: "/company/hero-1.jpg"
   },
   about: {
     eyebrow: "Tentang",
@@ -53,9 +53,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     { title: "Perbaikan Instalasi Rumah", image: "/company/nyala-portfolio-1.jpg" },
     { title: "Instalasi Listrik Baru", image: "/company/hero-2.jpg" },
     { title: "PJU & Maintenance", image: "/company/hero-3.jpg" },
-    { title: "Penangkal Petir", image: "/company/hero-4.jpg" },
-    { title: "Perbaikan Gangguan Listrik", image: "/company/service-gangguan.jpg" },
-    { title: "Instalasi Penangkal Petir", image: "/company/service-petir.jpg" }
+    { title: "Penangkal Petir", image: "/company/hero-4.jpg" }
   ],
   testimonial: {
     eyebrow: "Testimonial", title: "Dipercaya pelanggan, dinilai dari pengalaman.", description: "", rating: "5.0", ratingLabel: "Rating pelanggan",
@@ -90,10 +88,7 @@ function mergeContent(raw: Partial<SiteContent> | undefined): SiteContent {
     about: { ...DEFAULT_SITE_CONTENT.about, ...(r.about || {}), points: r.about?.points || DEFAULT_SITE_CONTENT.about.points },
     advantages: Array.isArray(r.advantages) ? r.advantages : DEFAULT_SITE_CONTENT.advantages,
     services: Array.isArray(r.services) ? r.services : DEFAULT_SITE_CONTENT.services,
-    portfolio: Array.from({ length: Math.max(6, Array.isArray(r.portfolio) ? r.portfolio.length : 0) }, (_, i) => ({
-      ...(DEFAULT_SITE_CONTENT.portfolio[i] || { title: `Portfolio ${i + 1}`, image: "" }),
-      ...((Array.isArray(r.portfolio) ? r.portfolio[i] : undefined) || {})
-    })),
+    portfolio: Array.isArray(r.portfolio) ? r.portfolio : DEFAULT_SITE_CONTENT.portfolio,
     testimonial: { ...DEFAULT_SITE_CONTENT.testimonial, ...(r.testimonial || {}), items: Array.isArray(r.testimonial?.items) ? r.testimonial!.items : DEFAULT_SITE_CONTENT.testimonial.items },
     partner: { ...DEFAULT_SITE_CONTENT.partner, ...(r.partner || {}), benefits: Array.isArray(r.partner?.benefits) ? r.partner!.benefits : DEFAULT_SITE_CONTENT.partner.benefits },
     vision: { ...DEFAULT_SITE_CONTENT.vision, ...(r.vision || {}) },
@@ -115,28 +110,9 @@ export async function saveSiteContent(content: SiteContent) {
 
 export async function uploadCMSImage(file: File, section: string, index?: number) {
   if (!storage) throw new Error("Firebase Storage belum dikonfigurasi.");
-  if (!file.type.startsWith("image/")) throw new Error("File harus berupa gambar.");
-  if (file.size > 10 * 1024 * 1024) throw new Error("Ukuran gambar maksimal 10 MB.");
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `cms/${section}/${index ?? "single"}-${Date.now()}-${safeName}`;
   const fileRef = ref(storage, path);
   await uploadBytes(fileRef, file, { contentType: file.type });
   return getDownloadURL(fileRef);
-}
-
-/** Delete only files belonging to the CMS storage namespace. */
-export async function deleteCMSImageByUrl(url: string) {
-  if (!storage || !url || !url.includes("/o/cms%2F") && !url.includes("/o/cms/")) return;
-  try {
-    const marker = "/o/";
-    const start = url.indexOf(marker);
-    if (start === -1) return;
-    const encodedPath = url.slice(start + marker.length).split("?")[0];
-    const path = decodeURIComponent(encodedPath);
-    if (!path.startsWith("cms/")) return;
-    await deleteObject(ref(storage, path));
-  } catch (error: any) {
-    // A missing old file should not make the CMS save fail.
-    if (error?.code !== "storage/object-not-found") console.warn("Gagal menghapus file CMS lama:", error);
-  }
 }
