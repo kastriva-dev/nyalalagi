@@ -26,13 +26,14 @@ export default function AuthPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const busyRef = useRef(false);
+  const registrationFlowRef = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("mode") === "register") setMode("register");
     if (!auth) return;
     return onAuthStateChanged(auth, async (user) => {
-      if (!user || user.isAnonymous || busyRef.current) return;
+      if (!user || user.isAnonymous || busyRef.current || registrationFlowRef.current) return;
       try {
         const profile = await getUserProfile(user.uid);
         window.location.href = profile?.role === "admin" ? "/admin" : "/laporan";
@@ -61,6 +62,7 @@ export default function AuthPage() {
       setLoading(true);
       busyRef.current = true;
       if (mode === "register") {
+        registrationFlowRef.current = true;
         if (!name.trim() || !phone.trim() || !address.trim() || !province.trim() || !city.trim() || !subdistrict.trim()) {
           throw new Error("Data nama, nomor WhatsApp, alamat, provinsi, kota dan kecamatan wajib diisi.");
         }
@@ -70,7 +72,11 @@ export default function AuthPage() {
           profilce_picture: profilePicture, longlat
         });
         setMessage(`Akun ${name.trim() ? `untuk ${name.trim()} ` : ""}berhasil dibuat. Anda akan diarahkan ke laporan.`);
-        setTimeout(() => { window.location.href = "/laporan"; }, 700);
+        // Registration is complete; keep the explicit redirect controlled by this flow.
+        setTimeout(() => {
+          registrationFlowRef.current = false;
+          window.location.href = "/laporan";
+        }, 700);
       } else if (mode === "login") {
         const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
         const profile = await getUserProfile(credential.user.uid);
@@ -100,7 +106,13 @@ export default function AuthPage() {
         "auth/too-many-requests": "Terlalu banyak percobaan. Silakan coba lagi beberapa saat lagi."
       };
       setError(messages[code] || err?.message || "Proses gagal. Silakan coba lagi.");
-    } finally { setLoading(false); busyRef.current = false; }
+    } finally {
+      setLoading(false);
+      // Do not release the registration guard immediately: Firebase can emit
+      // auth state changes asynchronously just after account creation.
+      if (mode !== "register") registrationFlowRef.current = false;
+      busyRef.current = false;
+    }
   }
 
   return <div className="auth-shell"><div className="auth-glow auth-glow-one"/><div className="auth-glow auth-glow-two"/>
