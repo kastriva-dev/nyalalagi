@@ -9,7 +9,7 @@ import { ArrowRight, CheckCircle2, Clock3, MapPin, ShieldCheck, Zap, Menu, Faceb
 import type { LucideIcon } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { getUserProfile } from "@/lib/user";
-import { DEFAULT_SITE_CONTENT, SiteContent } from "@/lib/cms";
+import { DEFAULT_SITE_CONTENT, SiteContent, mergeContent } from "@/lib/cms";
 import CmsEditor from "@/components/CmsEditor";
 
 const WHATSAPP_NUMBER = "6285195912262";
@@ -45,7 +45,7 @@ export default function LandingPage() {
     if (!db) return;
     return onSnapshot(collection(db, "siteContent"), snap => {
       const doc = snap.docs.find(d => d.id === "main");
-      if (doc) setContent(prev => ({ ...prev, ...doc.data(), hero: { ...prev.hero, ...(doc.data().hero || {}) }, about: { ...prev.about, ...(doc.data().about || {}) }, testimonial: { ...prev.testimonial, ...(doc.data().testimonial || {}) }, partner: { ...prev.partner, ...(doc.data().partner || {}) }, vision: { ...prev.vision, ...(doc.data().vision || {}) }, cta: { ...prev.cta, ...(doc.data().cta || {}) }, footer: { ...prev.footer, ...(doc.data().footer || {}) } } as SiteContent));
+      if (doc) setContent(mergeContent(doc.data() as Partial<SiteContent>));
     });
   }, []);
 

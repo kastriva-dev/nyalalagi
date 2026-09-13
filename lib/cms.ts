@@ -81,7 +81,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   footer: { address: "Bandung Technopark Gedung C\nJl Komunikasi No 1, Sukapura Kabupaten Bandung", phone: "+62 851-9591-2262", email: "cs@nyalalagi.com", newsletterTitle: "Our Newsletter", newsletterText: "Subscribe to our newsletter and receive the latest news about our products and services!" }
 };
 
-function mergeContent(raw: Partial<SiteContent> | undefined): SiteContent {
+export function mergeContent(raw: Partial<SiteContent> | undefined): SiteContent {
   const r = raw || {};
   return {
     ...DEFAULT_SITE_CONTENT,
