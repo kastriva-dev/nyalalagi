@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Camera, CheckCircle2, Loader2, MapPin, Send, X, Zap } from "lucide-react";
+import { ArrowLeft, Camera, CheckCircle2, Loader2, MapPin, Send, X, Zap, LogOut } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, firebaseReady } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 import { createReport } from "@/lib/report";
 import LocationPicker from "./LocationPicker";
 
@@ -68,10 +69,15 @@ export default function ReportPage() {
     } finally { setSending(false); }
   }
 
+  async function logout() {
+    try { if (auth) await signOut(auth); } finally { window.location.href = "/"; }
+  }
+
   if (done) return (
     <div className="page-shell">
       <header className="app-header"><div className="container app-header-inner">
         <Link href="/" className="app-brand"><Image src="/company/logo.png" alt="" width={38} height={38}/> NyalaLagi</Link>
+        <button type="button" className="btn btn-primary" onClick={logout}><LogOut size={16}/> Keluar</button>
       </div></header>
       <div className="container form-wrap">
         <div className="form-card" style={{maxWidth:650,margin:"60px auto",textAlign:"center"}}>
@@ -96,7 +102,10 @@ export default function ReportPage() {
     <div className="page-shell">
       <header className="app-header"><div className="container app-header-inner">
         <Link href="/" className="app-brand"><Image src="/company/logo.png" alt="" width={38} height={38}/> NyalaLagi</Link>
-        <Link href="/" className="btn btn-secondary"><ArrowLeft size={16}/> Beranda</Link>
+        <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+          <Link href="/" className="btn btn-secondary"><ArrowLeft size={16}/> Beranda</Link>
+          <button type="button" className="btn btn-primary" onClick={logout}><LogOut size={16}/> Keluar</button>
+        </div>
       </div></header>
 
       <main className="container form-wrap">

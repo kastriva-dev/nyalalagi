@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Clock3, MapPin, RefreshCw } from "lucide-react";
+import { ArrowLeft, Clock3, MapPin, RefreshCw, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 
 function statusLabel(status:string) {
   const m:any = {
@@ -44,11 +45,18 @@ export default function ReportsPage() {
     }, () => setLoading(false));
   }, [user]);
 
+  async function logout() {
+    try { if (auth) await signOut(auth); } finally { window.location.href = "/"; }
+  }
+
   return (
     <div className="page-shell">
       <header className="app-header"><div className="container app-header-inner">
         <Link href="/" className="app-brand"><Image src="/company/logo.png" alt="" width={38} height={38}/> NyalaLagi</Link>
-        <Link href="/" className="btn btn-secondary"><ArrowLeft size={16}/> Beranda</Link>
+        <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+          <Link href="/" className="btn btn-secondary"><ArrowLeft size={16}/> Beranda</Link>
+          <button type="button" className="btn btn-primary" onClick={logout}><LogOut size={16}/> Keluar</button>
+        </div>
       </div></header>
       <main className="container form-wrap">
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"end",gap:20,flexWrap:"wrap"}}>

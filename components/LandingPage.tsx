@@ -3,9 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, type User } from "firebase/auth";
+import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { collection, onSnapshot } from "firebase/firestore";
-import { ArrowRight, CheckCircle2, Clock3, MapPin, ShieldCheck, Zap, Menu, Facebook, Instagram, Linkedin, Twitter, Star, MessageCircle, UserRound, UserPlus, BriefcaseBusiness, Award, LockKeyhole, Pencil, Settings2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock3, MapPin, ShieldCheck, Zap, Menu, Facebook, Instagram, Linkedin, Twitter, Star, MessageCircle, UserRound, UserPlus, BriefcaseBusiness, Award, LockKeyhole, Pencil, Settings2, LogOut } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { getUserProfile } from "@/lib/user";
@@ -24,6 +24,8 @@ function EditButton({ adminMode, target, onEdit }: { adminMode: boolean; target:
   return <button type="button" className="cms-edit-pencil" title={`Edit ${target.label}`} aria-label={`Edit ${target.label}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(target); }}><Pencil size={14}/></button>;
 }
 
+const LogOutIcon = () => <LogOut size={16}/>;
+
 function EditableImage({ adminMode, src, alt, className, target, onEdit }: { adminMode: boolean; src: string; alt: string; className?: string; target: EditTarget; onEdit: (target: EditTarget) => void }) {
   return <div className={`cms-image-edit-wrap ${adminMode ? "cms-editing" : ""}`}><img src={src} alt={alt} className={className}/><EditButton adminMode={adminMode} target={target} onEdit={onEdit}/></div>;
 }
@@ -35,6 +37,9 @@ export default function LandingPage() {
   const [adminMode, setAdminMode] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorTarget, setEditorTarget] = useState<EditTarget | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentRole, setCurrentRole] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     if (!db) return;
@@ -45,13 +50,27 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const requested = params.get("adminEdit") === "1";
-    if (!requested || !auth) return;
-    return onAuthStateChanged(auth, async (user) => {
-      if (!user || user.isAnonymous) return;
-      try { const profile = await getUserProfile(user.uid); if (profile?.role === "admin") setAdminMode(true); } catch {}
+    if (!auth) { setAuthReady(true); return; }
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user || user.isAnonymous) {
+        setCurrentUser(null);
+        setCurrentRole(null);
+        setAuthReady(true);
+        return;
+      }
+      setCurrentUser(user);
+      try {
+        const profile = await getUserProfile(user.uid);
+        setCurrentRole(profile?.role || "customer");
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("adminEdit") === "1" && profile?.role === "admin") setAdminMode(true);
+      } catch {
+        setCurrentRole("customer");
+      } finally {
+        setAuthReady(true);
+      }
     });
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -69,6 +88,22 @@ export default function LandingPage() {
   useEffect(() => { const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setMobileOpen(false); }; window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey); }, []);
   const edit = (target: EditTarget) => { setEditorTarget(target); setEditorOpen(true); };
 
+  async function handleLogout() {
+    try {
+      if (auth) await signOut(auth);
+      setCurrentUser(null);
+      setCurrentRole(null);
+      setAdminMode(false);
+      setMobileOpen(false);
+      if (window.location.pathname !== "/") window.location.href = "/";
+    } catch (error) {
+      console.error("Logout gagal:", error);
+    }
+  }
+
+  const isLoggedIn = authReady && !!currentUser;
+  const isAdmin = currentRole === "admin";
+
   return <main>
     <div className={`scroll-progress ${scrolled ? "is-active" : ""}`} aria-hidden="true" />
     {adminMode && <div className="cms-admin-bar"><div><Settings2 size={15}/> <b>CMS Mode</b><span>Klik ikon pensil pada gambar untuk mengganti langsung.</span></div><button onClick={() => { setEditorTarget(null); setEditorOpen(true); }}>Buka CMS Lengkap</button></div>}
@@ -76,11 +111,39 @@ export default function LandingPage() {
       <div className="container nav-inner">
         <Link href="/" className="brand"><Image src="/company/logo.png" alt="NyalaLagi" width={42} height={42} /> NyalaLagi</Link>
         <nav className="nav-links"><a href="#tentang">Tentang</a><a href="#keunggulan">Keunggulan</a><a href="#layanan">Layanan</a><a href="#portfolio">Portfolio</a><a href="#testimonial">Testimonial</a><a href="#mitra">Mitra Teknisi</a><a href="#kontak">Kontak</a></nav>
-        <div className="nav-actions"><Link href="/login" className="btn btn-secondary"><UserRound size={16}/> Masuk</Link><Link href="/login?mode=register" className="btn btn-primary"><UserPlus size={16}/> Daftar</Link></div>
+        <div className="nav-actions">
+          {isLoggedIn ? (
+            <>
+              {isAdmin ? (
+                <Link href="/admin" className="btn btn-secondary"><Settings2 size={16}/> Admin</Link>
+              ) : (
+                <Link href="/laporan" className="btn btn-secondary"><UserRound size={16}/> Laporan Saya</Link>
+              )}
+              <button type="button" className="btn btn-primary nav-logout-btn" onClick={handleLogout}><LogOutIcon/> Keluar</button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="btn btn-secondary"><UserRound size={16}/> Masuk</Link>
+              <Link href="/login?mode=register" className="btn btn-primary"><UserPlus size={16}/> Daftar</Link>
+            </>
+          )}
+        </div>
         <button className={`mobile-menu ${mobileOpen ? "is-open" : ""}`} aria-label="Menu" aria-expanded={mobileOpen} onClick={() => setMobileOpen(v => !v)}><Menu size={24}/></button>
       </div>
     </header>
-    <div className={`mobile-panel ${mobileOpen ? "is-open" : ""}`} aria-hidden={!mobileOpen}><a href="#tentang" onClick={() => setMobileOpen(false)}>Tentang</a><a href="#keunggulan" onClick={() => setMobileOpen(false)}>Keunggulan</a><a href="#layanan" onClick={() => setMobileOpen(false)}>Layanan</a><a href="#portfolio" onClick={() => setMobileOpen(false)}>Portfolio</a><a href="#testimonial" onClick={() => setMobileOpen(false)}>Testimonial</a><a href="#mitra" onClick={() => setMobileOpen(false)}>Mitra Teknisi</a><a href="#kontak" onClick={() => setMobileOpen(false)}>Kontak</a><div className="mobile-panel-actions"><Link href="/login" className="btn btn-secondary" onClick={() => setMobileOpen(false)}><UserRound size={16}/> Masuk</Link><Link href="/login?mode=register" className="btn btn-primary" onClick={() => setMobileOpen(false)}><UserPlus size={16}/> Daftar</Link></div></div>
+    <div className={`mobile-panel ${mobileOpen ? "is-open" : ""}`} aria-hidden={!mobileOpen}><a href="#tentang" onClick={() => setMobileOpen(false)}>Tentang</a><a href="#keunggulan" onClick={() => setMobileOpen(false)}>Keunggulan</a><a href="#layanan" onClick={() => setMobileOpen(false)}>Layanan</a><a href="#portfolio" onClick={() => setMobileOpen(false)}>Portfolio</a><a href="#testimonial" onClick={() => setMobileOpen(false)}>Testimonial</a><a href="#mitra" onClick={() => setMobileOpen(false)}>Mitra Teknisi</a><a href="#kontak" onClick={() => setMobileOpen(false)}>Kontak</a><div className="mobile-panel-actions">
+          {isLoggedIn ? (
+            <>
+              {isAdmin ? <Link href="/admin" className="btn btn-secondary" onClick={() => setMobileOpen(false)}><Settings2 size={16}/> Admin</Link> : <Link href="/laporan" className="btn btn-secondary" onClick={() => setMobileOpen(false)}><UserRound size={16}/> Laporan Saya</Link>}
+              <button type="button" className="btn btn-primary" onClick={handleLogout}><LogOut size={16}/> Keluar</button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="btn btn-secondary" onClick={() => setMobileOpen(false)}><UserRound size={16}/> Masuk</Link>
+              <Link href="/login?mode=register" className="btn btn-primary" onClick={() => setMobileOpen(false)}><UserPlus size={16}/> Daftar</Link>
+            </>
+          )}
+        </div></div>
 
     <section className="hero dewi-hero">
       <div className="hero-orb hero-orb-one" aria-hidden="true"/><div className="hero-orb hero-orb-two" aria-hidden="true"/>
