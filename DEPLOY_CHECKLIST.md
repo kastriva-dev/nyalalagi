@@ -15,3 +15,12 @@
 - [ ] Test GPS permission on HTTPS.
 - [ ] Test camera upload on Android.
 - [ ] Test on slow network and mobile data.
+
+## Customer registration & admin
+- [ ] Confirm Firestore `users` collection exists after the first customer registration.
+- [ ] Confirm the registration document contains the required fields from `Struktur DB.docx`.
+- [ ] Create the first admin by changing that user's `role` to `admin` in Firebase Console.
+- [ ] Deploy `firestore.rules` and `storage.rules` after reviewing them in Firebase Rules Playground.
+- [ ] Verify `/admin` is inaccessible to customer accounts.
+- [ ] Verify admin can see customer and report statistics.
+- [ ] Verify profile photo upload is limited to image files and 5 MB.

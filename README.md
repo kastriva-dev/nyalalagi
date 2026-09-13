@@ -174,3 +174,51 @@ Wajib sinkronkan dengan sistem NyalaLagi yang sudah ada:
 - domain Vercel/nyalalagi.com
 
 Project ini sengaja tidak menambahkan Firebase Admin SDK/service account ke frontend.
+
+## Admin role & customer database
+
+The registration flow now creates a Firestore document at `users/{uid}` using the requested structure:
+
+- `name`
+- `email`
+- `phone_number`
+- `address`
+- `province`
+- `city`
+- `subdistrict`
+- `profilce_picture`
+- `role`
+- `fcm_token`
+- `balance`
+- `longlat`
+- `status`
+
+New registrations default to `role: "customer"`, `balance: 0`, `status: "active"`, and an empty `fcm_token`. `longlat` is stored as an object with `latitude` and `longitude` when the customer chooses to use GPS; otherwise it is `null`.
+
+### Create the first admin
+
+1. Register a normal account through `/login?mode=register`.
+2. In Firebase Console → Firestore Database → `users`, open that account's document using its Firebase Authentication UID as the document ID.
+3. Change only `role` from `customer` to `admin`.
+4. Keep `balance` numeric and keep the other profile fields intact.
+5. Sign out and sign in again. The account will be routed automatically to `/admin`.
+
+Do not put an admin password or service-account key in the frontend or repository. The admin dashboard checks the Firestore profile role and the Firestore rules enforce admin access.
+
+### Admin dashboard
+
+The `/admin` page provides:
+
+- Total customer
+- Total teknisi
+- Total laporan
+- Laporan berjalan
+- Customer active
+- Total balance customer
+- Completed reports
+- Realtime customer table with search
+- Realtime reports table
+
+### Image refresh
+
+The landing page now uses the supplied NyalaLagi work photos for the hero, about highlight, and four service cards. Portfolio cards use different images so the same photo is not repeated across the visible landing-page photo slots.
