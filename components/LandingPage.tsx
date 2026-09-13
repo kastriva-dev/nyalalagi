@@ -89,7 +89,7 @@ export default function LandingPage() {
       <div className="hero-dewi-content container"><div className="hero-copy hero-stagger" data-scroll-reveal>
         <div className="cms-editable-wrap"><span className="eyebrow"><Zap size={15}/> {content.hero.eyebrow}</span><EditButton adminMode={adminMode} target={{kind:"text",path:"hero.eyebrow",label:"Hero eyebrow"}} onEdit={edit}/></div>
         <div className="cms-editable-wrap"><h1>{content.hero.title} <span className="gradient-text">{content.hero.highlight}</span></h1><EditButton adminMode={adminMode} target={{kind:"text",path:"hero.title",label:"Hero judul"}} onEdit={edit}/></div>
-        <div className="cms-editable-wrap"><p className="muted">{content.hero.description}</p><EditButton adminMode={adminMode} target={{kind:"text",path:"hero.description",label:"Hero deskripsi"}} onEdit={edit}/></div>
+        <div className="cms-editable-wrap"><p className="muted hero-description">{content.hero.description}</p><EditButton adminMode={adminMode} target={{kind:"text",path:"hero.description",label:"Hero deskripsi"}} onEdit={edit}/></div>
         <div className="hero-buttons"><Link href="/lapor" className="btn btn-primary"><Zap size={18}/> Laporan via Website <ArrowRight size={17}/></Link><a href={whatsappHref} target="_blank" rel="noreferrer" className="btn btn-whatsapp"><MessageCircle size={18}/> Laporan via WhatsApp</a></div>
         <div className="hero-trust-row"><span><CheckCircle2 size={17}/> Teknisi terdaftar</span><span><MapPin size={17}/> Berbasis lokasi</span><span><ShieldCheck size={17}/> Layanan aman</span></div>
       </div></div>
