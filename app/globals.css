@@ -1101,3 +1101,9 @@ body { background: var(--ny-bg); color: var(--ny-text); }
   .about-highlight-copy { padding:28px 22px 18px !important; }
   .about-points { padding:0 22px 24px; }
 }
+
+/* Portfolio: six CMS-managed slots */
+.portfolio-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+.portfolio-item{min-width:0;}
+@media(max-width:900px){.portfolio-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:560px){.portfolio-grid{grid-template-columns:1fr;}}

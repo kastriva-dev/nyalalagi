@@ -48,7 +48,7 @@ export default function CmsEditor({ content, onClose, initialTarget }: { content
           <button onClick={() => open({kind:"text",path:"about.title",label:"Tentang judul"})}>Tentang</button>
           <button onClick={() => open({kind:"image",path:"about.image",label:"Tentang image",imageSection:"about"})}>Tentang image</button>
           {draft.services.map((s, i) => <button key={`s-${i}`} onClick={() => open({kind:"image",path:`services.${i}.image`,label:`Layanan ${i+1} image`,imageSection:"services",imageIndex:i})}>Layanan {i+1} image</button>)}
-          {draft.portfolio.map((p, i) => <button key={`p-${i}`} onClick={() => open({kind:"image",path:`portfolio.${i}.image`,label:`Portfolio ${i+1} image`,imageSection:"portfolio",imageIndex:i})}>Portfolio {i+1} image</button>)}
+          {draft.portfolio.slice(0, 6).map((p, i) => <button key={`p-${i}`} onClick={() => open({kind:"image",path:`portfolio.${i}.image`,label:`Portfolio ${i+1} image`,imageSection:"portfolio",imageIndex:i})}>Portfolio {i+1} image</button>)}
           <button onClick={() => open({kind:"text",path:"partner.title",label:"Mitra teknisi"})}>Mitra teknisi</button>
           <button onClick={() => open({kind:"text",path:"vision.title",label:"Visi & Misi"})}>Visi & Misi</button>
           <button onClick={() => open({kind:"text",path:"cta.title",label:"CTA"})}>CTA</button>
