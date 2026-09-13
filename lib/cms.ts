@@ -53,7 +53,9 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     { title: "Perbaikan Instalasi Rumah", image: "/company/nyala-portfolio-1.jpg" },
     { title: "Instalasi Listrik Baru", image: "/company/hero-2.jpg" },
     { title: "PJU & Maintenance", image: "/company/hero-3.jpg" },
-    { title: "Penangkal Petir", image: "/company/hero-4.jpg" }
+    { title: "Penangkal Petir", image: "/company/hero-4.jpg" },
+    { title: "Perbaikan Gangguan Listrik", image: "/company/service-gangguan.jpg" },
+    { title: "Instalasi Penangkal Petir", image: "/company/service-petir.jpg" }
   ],
   testimonial: {
     eyebrow: "Testimonial", title: "Dipercaya pelanggan, dinilai dari pengalaman.", description: "", rating: "5.0", ratingLabel: "Rating pelanggan",
@@ -88,7 +90,10 @@ function mergeContent(raw: Partial<SiteContent> | undefined): SiteContent {
     about: { ...DEFAULT_SITE_CONTENT.about, ...(r.about || {}), points: r.about?.points || DEFAULT_SITE_CONTENT.about.points },
     advantages: Array.isArray(r.advantages) ? r.advantages : DEFAULT_SITE_CONTENT.advantages,
     services: Array.isArray(r.services) ? r.services : DEFAULT_SITE_CONTENT.services,
-    portfolio: Array.isArray(r.portfolio) ? r.portfolio : DEFAULT_SITE_CONTENT.portfolio,
+    portfolio: Array.from({ length: Math.max(6, Array.isArray(r.portfolio) ? r.portfolio.length : 0) }, (_, i) => ({
+      ...(DEFAULT_SITE_CONTENT.portfolio[i] || { title: `Portfolio ${i + 1}`, image: "" }),
+      ...((Array.isArray(r.portfolio) ? r.portfolio[i] : undefined) || {})
+    })),
     testimonial: { ...DEFAULT_SITE_CONTENT.testimonial, ...(r.testimonial || {}), items: Array.isArray(r.testimonial?.items) ? r.testimonial!.items : DEFAULT_SITE_CONTENT.testimonial.items },
     partner: { ...DEFAULT_SITE_CONTENT.partner, ...(r.partner || {}), benefits: Array.isArray(r.partner?.benefits) ? r.partner!.benefits : DEFAULT_SITE_CONTENT.partner.benefits },
     vision: { ...DEFAULT_SITE_CONTENT.vision, ...(r.vision || {}) },
