@@ -331,3 +331,248 @@ html { scroll-behavior:smooth; }
   .auth-card { padding:24px 18px; }
   .partner-shell { padding:28px 20px; }
 }
+
+
+/* =========================================================
+   NYALALAGI MOTION SYSTEM
+   A hybrid of Dewi-style scroll choreography and
+   UrbanBuild-style component motion, kept dependency-free.
+   ========================================================= */
+:root {
+  --motion-ease: cubic-bezier(.22, 1, .36, 1);
+}
+
+body {
+  overflow-x: hidden;
+}
+
+.scroll-progress {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #5a45d6, #1eb7f2, #ffd21a);
+  box-shadow: 0 0 18px rgba(30,183,242,.38);
+  pointer-events: none;
+  transition: width .08s linear;
+}
+.scroll-progress.is-active { width: var(--scroll-progress, 0%); }
+
+.nav {
+  transition: background .45s var(--motion-ease), box-shadow .45s var(--motion-ease),
+              border-color .45s var(--motion-ease), transform .45s var(--motion-ease);
+}
+.nav-scrolled {
+  background: rgba(255,255,255,.84);
+  border-bottom-color: rgba(90,69,214,.10);
+  box-shadow: 0 14px 42px rgba(32,25,76,.10);
+}
+
+.hero {
+  isolation: isolate;
+  min-height: 680px;
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 16% 72%, rgba(90,69,214,.08), transparent 25%),
+    linear-gradient(110deg, transparent 40%, rgba(255,255,255,.28) 50%, transparent 60%);
+  animation: heroSheen 9s ease-in-out infinite;
+}
+.hero-orb {
+  position: absolute;
+  z-index: -1;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(1px);
+  will-change: transform;
+}
+.hero-orb-one {
+  width: 190px; height: 190px; left: -70px; bottom: 8%;
+  background: radial-gradient(circle, rgba(30,183,242,.18), rgba(30,183,242,0) 68%);
+  animation: orbFloat 8s ease-in-out infinite;
+}
+.hero-orb-two {
+  width: 240px; height: 240px; right: 25%; top: 8%;
+  background: radial-gradient(circle, rgba(90,69,214,.13), rgba(90,69,214,0) 68%);
+  animation: orbFloat 10s ease-in-out -2s infinite reverse;
+}
+
+.hero-stagger .eyebrow { animation: heroItem .85s var(--motion-ease) .05s both; }
+.hero-stagger h1 { animation: heroItem .95s var(--motion-ease) .14s both; }
+.hero-stagger > p { animation: heroItem .9s var(--motion-ease) .24s both; }
+.hero-stagger .hero-buttons { animation: heroItem .85s var(--motion-ease) .34s both; }
+.hero-stagger .hero-trust-row { animation: heroItem .8s var(--motion-ease) .44s both; }
+
+.hero-visual-motion .photo-main {
+  animation: heroPhotoIn 1.15s var(--motion-ease) .16s both;
+}
+.hero-visual-motion .ps1 { animation: heroPhotoIn .95s var(--motion-ease) .30s both, photoFloat 6s ease-in-out 1.4s infinite; }
+.hero-visual-motion .ps2 { animation: heroPhotoIn .95s var(--motion-ease) .42s both, photoFloat 7s ease-in-out 1.6s infinite reverse; }
+.hero-visual-motion .ps3 { animation: heroPhotoIn .95s var(--motion-ease) .54s both, photoFloat 6.5s ease-in-out 1.8s infinite; }
+.hero-visual-motion .floating-card {
+  animation: floatingCardIn 1s var(--motion-ease) .58s both, cardFloat 5s ease-in-out 1.8s infinite;
+}
+
+.card,
+.portfolio-item,
+.partner-benefit,
+.about-points span,
+.btn {
+  will-change: transform;
+}
+.card:hover {
+  transform: translateY(-8px) scale(1.008);
+}
+.feature-card::before,
+.service-card::before,
+.testimonial-card::before,
+.partner-shell::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(120deg, rgba(255,255,255,.32), transparent 34%);
+  opacity: 0;
+  transition: opacity .45s ease;
+}
+.feature-card:hover::before,
+.service-card:hover::before,
+.testimonial-card:hover::before,
+.partner-shell:hover::before { opacity: 1; }
+.feature-card,
+.service-card,
+.testimonial-card,
+.partner-shell { position: relative; }
+
+.service-image-wrap::after,
+.portfolio-item::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(255,255,255,0) 35%, rgba(255,255,255,.20) 50%, rgba(255,255,255,0) 65%);
+  transform: translateX(-130%);
+  transition: transform .85s var(--motion-ease);
+}
+.service-card:hover .service-image-wrap::after,
+.portfolio-item:hover::after { transform: translateX(130%); }
+
+.portfolio-item {
+  transition: transform .55s var(--motion-ease), box-shadow .55s var(--motion-ease);
+}
+.portfolio-item:hover {
+  transform: translateY(-7px);
+  box-shadow: 0 28px 70px rgba(20,28,50,.17);
+}
+
+.text-link svg { transition: transform .3s var(--motion-ease); }
+.text-link:hover svg { transform: translateX(5px); }
+
+.mobile-menu {
+  border: 0;
+  background: transparent;
+  color: var(--navy);
+  padding: 8px;
+  border-radius: 12px;
+  transition: transform .3s ease, background .3s ease;
+}
+.mobile-menu:hover { background: rgba(90,69,214,.07); }
+.mobile-menu.is-open { transform: rotate(90deg); }
+.mobile-panel {
+  display: none;
+}
+.mobile-panel-actions { display:flex; gap:10px; padding-top:8px; }
+.mobile-panel-actions .btn { flex:1; }
+
+@keyframes heroItem {
+  from { opacity: 0; transform: translate3d(0, 32px, 0); filter: blur(7px); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); filter: blur(0); }
+}
+@keyframes heroPhotoIn {
+  from { opacity: 0; transform: translate3d(40px, 20px, 0) scale(.90) rotate(1.5deg); filter: blur(8px); }
+  to { opacity: 1; transform: translate3d(0,0,0) scale(1) rotate(0); filter: blur(0); }
+}
+@keyframes floatingCardIn {
+  from { opacity: 0; transform: translate3d(-25px, 25px, 0) scale(.9); }
+  to { opacity: 1; transform: translate3d(0,0,0) scale(1); }
+}
+@keyframes photoFloat {
+  0%,100% { transform: translate3d(0,0,0) rotate(0); }
+  50% { transform: translate3d(0,-9px,0) rotate(.5deg); }
+}
+@keyframes cardFloat {
+  0%,100% { transform: translate3d(0,0,0); }
+  50% { transform: translate3d(0,-7px,0); }
+}
+@keyframes orbFloat {
+  0%,100% { transform: translate3d(0,0,0) scale(1); }
+  50% { transform: translate3d(22px,-18px,0) scale(1.08); }
+}
+@keyframes heroSheen {
+  0%, 70%, 100% { opacity: 0; transform: translateX(-8%); }
+  78% { opacity: 1; transform: translateX(8%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .001ms !important;
+  }
+  .scroll-reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
+}
+
+@media (max-width: 900px) {
+  .mobile-panel {
+    position: fixed;
+    display: grid;
+    top: 76px;
+    left: 11px;
+    right: 11px;
+    z-index: 49;
+    gap: 3px;
+    padding: 14px;
+    border: 1px solid rgba(255,255,255,.88);
+    border-radius: 22px;
+    background: rgba(255,255,255,.88);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    box-shadow: 0 24px 70px rgba(32,25,76,.15);
+    opacity: 0;
+    transform: translateY(-14px) scale(.98);
+    pointer-events: none;
+    transition: opacity .35s var(--motion-ease), transform .45s var(--motion-ease);
+  }
+  .mobile-panel.is-open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+  .mobile-panel > a {
+    padding: 12px 13px;
+    border-radius: 12px;
+    color: #454455;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .mobile-panel > a:hover { background: rgba(90,69,214,.07); color: var(--navy); }
+}
+@media (max-width: 560px) {
+  .hero { min-height: auto; }
+  .hero-visual-motion .photo-main { animation-name: heroPhotoIn; }
+  .hero-visual { min-height: 365px; }
+  .photo-main { width: 78%; height: 300px; }
+  .ps1 { width: 46%; height: 150px; }
+  .ps2 { width: 40%; height: 140px; }
+  .ps3 { width: 35%; height: 115px; }
+  .floating-card { max-width: 78%; padding: 12px; font-size: 12px; }
+}
