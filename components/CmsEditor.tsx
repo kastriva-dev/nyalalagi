@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check, ImagePlus, Loader2, Save, X } from "lucide-react";
-import { SiteContent, saveSiteContent, uploadCMSImage } from "@/lib/cms";
+import { SiteContent, saveSiteContent, uploadCMSImage, deleteCMSImageByUrl } from "@/lib/cms";
 
 type Target = { kind: "text" | "image"; path: string; label: string; imageSection?: string; imageIndex?: number };
 
@@ -21,22 +21,49 @@ export default function CmsEditor({ content, onClose, initialTarget }: { content
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [pendingUploads, setPendingUploads] = useState<string[]>([]);
 
   function open(t: Target) { setTarget(t); setValue(String(getAt(draft, t.path) ?? "")); setError(""); setMessage(""); }
+
+  async function closeEditor() {
+    // Remove uploads that were selected but never published.
+    await Promise.all(pendingUploads.map(deleteCMSImageByUrl));
+    setPendingUploads([]);
+    onClose();
+  }
   function applyText() { if (!target) return; const next = clone(draft); setAt(next, target.path, value); setDraft(next); setMessage("Perubahan teks diterapkan. Klik Simpan untuk menerbitkan."); }
   async function handleImage(file: File) {
     if (!target) return;
-    try { setUploading(true); setError(""); const url = await uploadCMSImage(file, target.imageSection || target.path.replaceAll(".", "-"), target.imageIndex); const next = clone(draft); setAt(next, target.path, url); setDraft(next); setValue(url); setMessage("Gambar berhasil diunggah."); }
+    try { setUploading(true); setError(""); const previousUrl = String(getAt(draft, target.path) ?? "");
+      const url = await uploadCMSImage(file, target.imageSection || target.path.replaceAll(".", "-"), target.imageIndex);
+      setPendingUploads(prev => [...prev, url]);
+      const next = clone(draft); setAt(next, target.path, url); setDraft(next); setValue(url); setMessage("Gambar berhasil diunggah. Klik Simpan Perubahan untuk menerbitkannya."); }
     catch (e: any) { setError(e?.message || "Upload gambar gagal."); } finally { setUploading(false); }
   }
   async function save() {
-    try { setSaving(true); setError(""); await saveSiteContent(draft); setMessage("CMS berhasil disimpan. Landing page akan memakai perubahan terbaru."); }
+    try {
+      setSaving(true); setError("");
+      const oldUrls = collectImageUrls(content);
+      const newUrls = collectImageUrls(draft);
+      await saveSiteContent(draft);
+      // Delete old Firebase CMS images only after Firestore has successfully committed.
+      const removed = oldUrls.filter(url => !newUrls.includes(url) && isCMSUrl(url));
+      const orphanedUploads = pendingUploads.filter(url => !newUrls.includes(url));
+      await Promise.all([...removed, ...orphanedUploads].map(deleteCMSImageByUrl));
+      setPendingUploads([]);
+      setMessage("CMS berhasil disimpan. Gambar lama yang tidak dipakai sudah dibersihkan.");
+    }
     catch (e: any) { setError(e?.message || "Gagal menyimpan CMS."); } finally { setSaving(false); }
   }
 
-  return <div className="cms-modal-backdrop" onMouseDown={e => e.target === e.currentTarget && onClose()}>
+  function collectImageUrls(obj: SiteContent): string[] {
+    return [obj.hero.image, obj.about.image, ...obj.services.map(x => x.image), ...obj.portfolio.map(x => x.image)].filter(Boolean);
+  }
+  function isCMSUrl(url: string) { return typeof url === "string" && url.includes("/o/cms%2F"); }
+
+  return <div className="cms-modal-backdrop" onMouseDown={e => e.target === e.currentTarget && closeEditor()}>
     <div className="cms-modal">
-      <header className="cms-modal-head"><div><span className="eyebrow">NYALALAGI CMS</span><h2>Edit Website</h2><p>Ubah tulisan dan gambar langsung tanpa menyentuh source code.</p></div><button className="cms-icon-button" onClick={onClose}><X size={19}/></button></header>
+      <header className="cms-modal-head"><div><span className="eyebrow">NYALALAGI CMS</span><h2>Edit Website</h2><p>Ubah tulisan dan gambar langsung tanpa menyentuh source code.</p></div><button className="cms-icon-button" onClick={closeEditor}><X size={19}/></button></header>
       <div className="cms-modal-body">
         <div className="cms-sidebar">
           <h3>Konten</h3>
