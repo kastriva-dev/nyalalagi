@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import PWARegister from "@/components/PWARegister";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "NyalaLagi — Layanan Perbaikan Kelistrikan",
@@ -10,21 +12,24 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/company/logo.png",
-    apple: "/company/logo.png"
-  }
+    apple: "/company/logo.png",
+  },
+  themeColor: "#ffffff",
 };
 
-export const viewport: Viewport = {
-  themeColor: "#ffd11a",
-  width: "device-width",
-  initialScale: 1,
-  viewportFit: "cover"
-};
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="id">
-      <body><PWARegister />{children}</body>
+    <html lang="en">
+      <body>
+        <Header />
+        <PWARegister />
+        {children}
+        <Footer />
+      </body>
     </html>
   );
 }
