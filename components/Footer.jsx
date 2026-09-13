@@ -34,7 +34,7 @@ const Footer = () => {
               />
             </Link>
             <p className="max-w-sm mb-8">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+              NyalaLagi adalah platform digital PT Nyalalagi Solusi Andalan yang mempertemukan masyarakat dengan teknisi listrik.
             </p>
             <Socials />
           </div>
@@ -123,7 +123,7 @@ const Footer = () => {
         </div>
         <div className="text-center pt-12">
           <p>
-            &copy; {new Date().getFullYear()} UrbanBuild. All rights reserved.
+            &copy; {new Date().getFullYear()} NyalaLagi. All rights reserved.
           </p>
         </div>
       </div>

@@ -13,28 +13,30 @@ const Hero = () => {
           <motion.h1
             variants={fadeIn('down', 0.2)}
             initial="hidden"
-            whileInView={"show"}
-            viewport={{ once: false, amount: 0.6 }}
+            animate="show"
+            exit="hidden"
             className="h1"
           >
-            Welcome to UrbanBuild
+            Building Dreams <br />
+            Into Reality
           </motion.h1>
           <motion.p
-            variants={fadeIn('down', 0.4)}
+            variants={fadeIn('down', 0.3)}
             initial="hidden"
-            whileInView={"show"}
-            viewport={{ once: false, amount: 0.6 }}
-            className="max-w-[580px] mb-8"
+            animate="show"
+            exit="hidden"
+            className="max-w-[540px] mb-8"
           >
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
+            eiusmod tempor incididunt ut labore et dolore magna aliqua.
           </motion.p>
           <motion.div
-            variants={fadeIn('down', 0.6)}
+            variants={fadeIn('down', 0.4)}
             initial="hidden"
-            whileInView={"show"}
-            viewport={{ once: false, amount: 0.6 }}
+            animate="show"
+            exit="hidden"
           >
-            <Button text="Get started" />
+            <Button text="Get Started" />
           </motion.div>
         </div>
       </div>

@@ -8,7 +8,7 @@ import { fadeIn } from "@/variants";
 
 const testimonials = [
   {
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    text: "Teknisi berpengalaman memperbaiki masalah kelistrikan di rumah saya dengan cepat dan profesional.",
     name: "John Doe",
     position: "CEO, Company",
     img: "/assets/img/testimonials/avatar.jpg",
