@@ -1,32 +1,64 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() {
-      return request.auth != null;
+    function signedIn() { return request.auth != null; }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
     function isAdmin() {
-      return signedIn()
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+      return signedIn() && userDoc().data.role == "admin";
+    }
+
+    function isTechnician() {
+      return signedIn() && userDoc().data.role == "technician" && userDoc().data.status == "active";
+    }
+
+    function isAssignedTechnician() {
+      return isTechnician() && resource.data.technicianId == request.auth.uid;
+    }
+
+    function validCustomerProfile() {
+      return request.resource.data.keys().hasOnly([
+        "name", "email", "phone_number", "address", "province", "city",
+        "subdistrict", "profilce_picture", "role", "fcm_token", "balance",
+        "longlat", "status", "createdAt", "updatedAt"
+      ])
+      && request.resource.data.role == "customer"
+      && request.resource.data.balance == 0
+      && request.resource.data.status == "active";
+    }
+
+    function validReportBase() {
+      return request.resource.data.keys().hasOnly([
+        "customerId", "customerName", "customerPhone", "problemType",
+        "description", "location", "status", "technicianId", "technicianName",
+        "technicianPhone", "assignedAt", "acceptedAt", "onTheWayAt", "arrivedAt",
+        "startedAt", "completedAt", "cancelledAt", "photoUrls", "createdAt",
+        "updatedAt", "submissionError"
+      ]);
     }
 
     match /users/{userId} {
-      // Customer creates only their own profile. Role/balance/status are controlled by the app defaults.
       allow create: if signedIn()
         && request.auth.uid == userId
-        && request.resource.data.role == "customer"
-        && request.resource.data.balance == 0
-        && request.resource.data.status == "active";
+        && validCustomerProfile();
 
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
 
-      // Customers can update their own profile but cannot self-promote or change their balance/role.
       allow update: if signedIn() && (
-        isAdmin()
-        || (
+        isAdmin() || (
           request.auth.uid == userId
+          && resource.data.role == "customer"
           && request.resource.data.role == resource.data.role
           && request.resource.data.balance == resource.data.balance
+          && request.resource.data.status == resource.data.status
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "name", "phone_number", "address", "province", "city",
+            "subdistrict", "profilce_picture", "fcm_token", "longlat", "updatedAt"
+          ])
         )
       );
 
@@ -40,25 +72,58 @@ service cloud.firestore {
 
     match /reports/{reportId} {
       allow create: if signedIn()
-        && request.resource.data.customerId == request.auth.uid;
+        && validReportBase()
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.status == "SEARCHING_ENGINEER"
+        && request.resource.data.technicianId == null
+        && request.resource.data.photoUrls.size() == 0;
 
-      allow read: if signedIn()
-        && (
+      allow read: if signedIn() && (
+        resource.data.customerId == request.auth.uid
+        || isAdmin()
+        || isAssignedTechnician()
+      );
+
+      // Customer can edit only the report content while no technician has been assigned.
+      allow update: if signedIn() && (
+        isAdmin() ||
+        (
           resource.data.customerId == request.auth.uid
-          || isAdmin()
-          || request.auth.token.engineer == true
-        );
-
-      allow update: if signedIn()
-        && (
-          (
-            resource.data.customerId == request.auth.uid
-            && request.resource.data.customerId == resource.data.customerId
-            && resource.data.status == "SEARCHING_ENGINEER"
+          && resource.data.status == "SEARCHING_ENGINEER"
+          && resource.data.technicianId == null
+          && request.resource.data.customerId == resource.data.customerId
+          && request.resource.data.customerName == resource.data.customerName
+          && request.resource.data.customerPhone == resource.data.customerPhone
+          && request.resource.data.status == resource.data.status
+          && request.resource.data.technicianId == resource.data.technicianId
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "problemType", "description", "location", "photoUrls", "updatedAt"
+          ])
+        ) ||
+        // Assigned technician can move only their own job through the approved workflow.
+        (
+          isAssignedTechnician()
+          && request.resource.data.customerId == resource.data.customerId
+          && request.resource.data.technicianId == resource.data.technicianId
+          && request.resource.data.customerName == resource.data.customerName
+          && request.resource.data.customerPhone == resource.data.customerPhone
+          && request.resource.data.problemType == resource.data.problemType
+          && request.resource.data.description == resource.data.description
+          && request.resource.data.location == resource.data.location
+          && request.resource.data.photoUrls == resource.data.photoUrls
+          && request.resource.data.createdAt == resource.data.createdAt
+          && (
+            (resource.data.status == "ENGINEER_ASSIGNED" && request.resource.data.status in ["ENGINEER_ON_WAY", "REJECTED"]) ||
+            (resource.data.status == "ENGINEER_ON_WAY" && request.resource.data.status in ["ARRIVED", "REJECTED"]) ||
+            (resource.data.status == "ARRIVED" && request.resource.data.status in ["IN_PROGRESS", "REJECTED"]) ||
+            (resource.data.status == "IN_PROGRESS" && request.resource.data.status in ["COMPLETED", "REJECTED"])
           )
-          || isAdmin()
-          || request.auth.token.engineer == true
-        );
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "status", "onTheWayAt", "arrivedAt", "startedAt", "completedAt", "updatedAt"
+          ])
+        )
+      );
 
       allow delete: if isAdmin();
     }

@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { LockKeyhole, Mail, UserPlus, LogIn, ArrowLeft, Loader2, ShieldCheck, KeyRound, Phone, Camera, LocateFixed } from "lucide-react";
 import { createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
-import { auth, db, firebaseReady } from "@/lib/firebase";
+import { auth, firebaseReady } from "@/lib/firebase";
 import { createCustomerProfile, getUserProfile } from "@/lib/user";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+
 
 export default function AuthPage() {
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
@@ -36,7 +36,7 @@ export default function AuthPage() {
       if (!user || user.isAnonymous || busyRef.current || registrationFlowRef.current) return;
       try {
         const profile = await getUserProfile(user.uid);
-        window.location.href = profile?.role === "admin" ? "/admin" : "/laporan";
+        window.location.href = profile?.role === "admin" ? "/admin" : profile?.role === "technician" ? "/teknisi" : "/laporan";
       } catch {
         window.location.href = "/laporan";
       }
@@ -81,16 +81,9 @@ export default function AuthPage() {
         const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
         const profile = await getUserProfile(credential.user.uid);
         if (!profile) {
-          await setDoc(doc(db!, "users", credential.user.uid), {
-            name: credential.user.displayName || "",
-            email: credential.user.email || email.trim(), phone_number: "", address: "", province: "", city: "", subdistrict: "",
-            profilce_picture: "", role: "customer", fcm_token: "", balance: 0, longlat: null, status: "active",
-            createdAt: serverTimestamp(), updatedAt: serverTimestamp()
-          });
-          window.location.href = "/laporan";
-          return;
+          throw new Error("Profil akun tidak ditemukan. Silakan hubungi administrator atau selesaikan pendaftaran ulang.");
         }
-        window.location.href = profile.role === "admin" ? "/admin" : "/laporan";
+        window.location.href = profile.role === "admin" ? "/admin" : profile.role === "technician" ? "/teknisi" : "/laporan";
       } else {
         await sendPasswordResetEmail(auth, email.trim());
         setMessage("Tautan reset password sudah dikirim ke email Anda. Periksa inbox dan folder spam.");
