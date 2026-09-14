@@ -85,6 +85,7 @@ export default function TechnicianPage() {
 
   useEffect(() => {
     if (!db || !user) return;
+    const firestore = db;
     const onWay = reports.filter(r => r.status === "ENGINEER_ON_WAY");
     if (!onWay.length || !navigator.geolocation) {
       if (watchRef.current != null) navigator.geolocation?.clearWatch(watchRef.current);
@@ -101,7 +102,7 @@ export default function TechnicianPage() {
         const distanceApprox = previous ? Math.hypot((lat - previous.lat) * 111000, (lng - previous.lng) * 111000) : Infinity;
         if (previous && now - previous.at < 10000 && distanceApprox < 25) return;
         lastWriteRef.current[r.id] = { lat, lng, at: now };
-        setDoc(doc(db, "reportTracking", r.id), {
+        setDoc(doc(firestore, "reportTracking", r.id), {
           reportId: r.id,
           customerId: r.customerId,
           technicianId: user.uid,
@@ -128,9 +129,10 @@ export default function TechnicianPage() {
 
   useEffect(() => {
     if (!db || !user) return;
+    const firestore = db;
     const trackedIds = new Set(reports.filter(r => r.status === "ENGINEER_ON_WAY").map(r => r.id));
     reports.filter(r => ["ARRIVED","IN_PROGRESS","COMPLETED","REJECTED","CANCELLED"].includes(r.status)).forEach(r => {
-      if (r.technicianId === user.uid) deleteDoc(doc(db, "reportTracking", r.id)).catch(() => undefined);
+      if (r.technicianId === user.uid) deleteDoc(doc(firestore, "reportTracking", r.id)).catch(() => undefined);
       delete lastWriteRef.current[r.id];
     });
     Object.keys(lastWriteRef.current).forEach(id => { if (!trackedIds.has(id)) delete lastWriteRef.current[id]; });
