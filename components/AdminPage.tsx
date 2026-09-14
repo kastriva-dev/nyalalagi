@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
-  Activity, BarChart3, ChevronLeft, ChevronRight, CircleDollarSign, ClipboardList,
+  Activity, BarChart3, BookOpen, ChevronLeft, ChevronRight, CircleDollarSign, ClipboardList,
   LogOut, Menu, Search, ShieldCheck, UserRound, Users, X, MapPin, Pencil,
   UserCog, UserPlus, Wrench, CheckCircle2, Clock3, Navigation, Loader2, RefreshCw
 } from "lucide-react";
@@ -67,6 +67,13 @@ export default function AdminPage() {
   const [assigning, setAssigning] = useState("");
   const [updatingRole, setUpdatingRole] = useState("");
   const [balanceTotal, setBalanceTotal] = useState(0);
+
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    if (tab && ["dashboard", "customers", "reports", "technicians"].includes(tab)) {
+      setActive(tab);
+    }
+  }, []);
 
   useEffect(() => {
     if (!auth) { setError("Firebase belum dikonfigurasi."); setChecking(false); return; }
@@ -232,7 +239,7 @@ export default function AdminPage() {
     </aside>
     {mobileOpen && <button className="admin-overlay" aria-label="Tutup menu" onClick={()=>setMobileOpen(false)}/>} 
     <main className="admin-main">
-      <header className="admin-topbar"><button className="admin-menu-toggle" onClick={()=>setMobileOpen(true)}><Menu size={22}/></button><div><span className="admin-kicker">ADMINISTRATOR</span><h1>{active === "dashboard" ? "Dashboard Operasional" : active === "customers" ? "Data Customer" : active === "reports" ? "Data Laporan" : "Manajemen Teknisi"}</h1></div><div className="admin-top-actions"><span className="admin-status"><i/> Sistem aktif</span><button className="admin-logout" onClick={logout}><LogOut size={16}/> Keluar</button></div></header>
+      <header className="admin-topbar"><button className="admin-menu-toggle" onClick={()=>setMobileOpen(true)}><Menu size={22}/></button><div><span className="admin-kicker">ADMINISTRATOR</span><h1>{active === "dashboard" ? "Dashboard Operasional" : active === "customers" ? "Data Customer" : active === "reports" ? "Data Laporan" : "Manajemen Teknisi"}</h1></div><div className="admin-top-actions"><span className="admin-status"><i/> Sistem aktif</span><Link className="admin-guide-link" href="/admin/panduan"><BookOpen size={16}/> Panduan</Link><button className="admin-logout" onClick={logout}><LogOut size={16}/> Keluar</button></div></header>
       {error && <div className="admin-error">{error}<button onClick={()=>setError("")}><X size={14}/></button></div>}
 
       {active === "dashboard" && <>
