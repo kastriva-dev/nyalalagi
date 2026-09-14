@@ -4,6 +4,15 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "**" }
     ]
+  },
+  turbopack: {
+    root: "."
+  },
+  // Suppress source maps in production for faster Vercel builds
+  productionBrowserSourceMaps: false,
+  // Optimize for Vercel Edge Functions
+  experimental: {
+    optimizeCss: true,
   }
 };
 
