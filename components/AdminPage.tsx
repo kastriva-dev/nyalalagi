@@ -177,8 +177,22 @@ export default function AdminPage() {
   useEffect(() => {
     if (!db || !me || active !== "reports") return;
     getDocs(query(collection(db, "users"), where("role", "==", "technician"), limit(100)))
-      .then(s => setAssignmentTechs(s.docs.map(d => ({ id: d.id, ...d.data() } as Profile)).filter(t => t.status === "active").sort((a,b) => String(a.name||a.email||"").localeCompare(String(b.name||b.email||"))))
-      .catch(e => setError(e?.message || "Gagal memuat daftar teknisi."));
+      .then((snapshot) => {
+        const technicians = snapshot.docs
+          .map((docSnapshot) => ({
+            id: docSnapshot.id,
+            ...docSnapshot.data(),
+          }) as Profile)
+          .filter((technician) => technician.status === "active")
+          .sort((a, b) => {
+            const nameA = String(a.name || a.email || "");
+            const nameB = String(b.name || b.email || "");
+            return nameA.localeCompare(nameB);
+          });
+
+        setAssignmentTechs(technicians);
+      })
+      .catch((e) => setError(e?.message || "Gagal memuat daftar teknisi."));
   }, [active, me]);
 
   async function assign(report: Profile, technicianId: string) {
