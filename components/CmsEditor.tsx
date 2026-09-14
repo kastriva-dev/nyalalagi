@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check, ImagePlus, Loader2, Save, X } from "lucide-react";
-import { SiteContent, saveSiteContent, uploadCMSImage } from "@/lib/cms";
+import { SiteContent, saveSiteContent, uploadCMSImage, mergeContent } from "@/lib/cms";
 
 type Target = { kind: "text" | "image"; path: string; label: string; imageSection?: string; imageIndex?: number };
 
@@ -14,9 +14,9 @@ function setAt(obj: any, path: string, value: any) {
 function clone<T>(v: T): T { return JSON.parse(JSON.stringify(v)); }
 
 export default function CmsEditor({ content, onClose, initialTarget }: { content: SiteContent; onClose: () => void; initialTarget?: Target | null }) {
-  const [draft, setDraft] = useState(() => clone(content));
+  const [draft, setDraft] = useState<SiteContent>(() => clone(mergeContent(content)));
   const [target, setTarget] = useState<Target | null>(initialTarget || null);
-  const [value, setValue] = useState(() => initialTarget ? String(getAt(content, initialTarget.path) ?? "") : "");
+  const [value, setValue] = useState(() => initialTarget ? String(getAt(mergeContent(content), initialTarget.path) ?? "") : "");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
@@ -30,7 +30,7 @@ export default function CmsEditor({ content, onClose, initialTarget }: { content
     catch (e: any) { setError(e?.message || "Upload gambar gagal."); } finally { setUploading(false); }
   }
   async function save() {
-    try { setSaving(true); setError(""); await saveSiteContent(draft); setMessage("CMS berhasil disimpan. Landing page akan memakai perubahan terbaru."); }
+    try { setSaving(true); setError(""); const normalized = mergeContent(draft); setDraft(normalized); await saveSiteContent(normalized); setMessage("CMS berhasil disimpan. 6 portfolio dipertahankan dan landing page akan memakai perubahan terbaru."); }
     catch (e: any) { setError(e?.message || "Gagal menyimpan CMS."); } finally { setSaving(false); }
   }
 
