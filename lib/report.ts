@@ -55,6 +55,13 @@ export async function createReport(params: {
     completedAt: null,
     cancelledAt: null,
     photoUrls: [],
+    beforePhotoUrls: [],
+    afterPhotoUrls: [],
+    completionNote: "",
+    customerConfirmed: false,
+    customerConfirmedAt: null,
+    customerRating: null,
+    customerNote: "",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });

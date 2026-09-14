@@ -222,3 +222,10 @@ The `/admin` page provides:
 ### Image refresh
 
 The landing page now uses the supplied NyalaLagi work photos for the hero, about highlight, and four service cards. Portfolio cards use different images so the same photo is not repeated across the visible landing-page photo slots.
+
+
+## Development stages
+- Stage 1 — Security hardening
+- Stage 2 — Technician workflow
+- Stage 3 — GPS live tracking
+- Stage 4 — Job evidence & customer confirmation

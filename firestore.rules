@@ -35,8 +35,9 @@ service cloud.firestore {
         "customerId", "customerName", "customerPhone", "problemType",
         "description", "location", "status", "technicianId", "technicianName",
         "technicianPhone", "assignedAt", "acceptedAt", "onTheWayAt", "arrivedAt",
-        "startedAt", "completedAt", "cancelledAt", "photoUrls", "createdAt",
-        "updatedAt", "submissionError"
+        "startedAt", "completedAt", "cancelledAt", "photoUrls", "beforePhotoUrls",
+        "afterPhotoUrls", "completionNote", "customerConfirmed", "customerConfirmedAt",
+        "customerRating", "customerNote", "createdAt", "updatedAt", "submissionError"
       ]);
     }
 
@@ -101,6 +102,41 @@ service cloud.firestore {
             "problemType", "description", "location", "photoUrls", "updatedAt"
           ])
         ) ||
+        // Customer can confirm a completed job once and optionally rate it.
+        (
+          resource.data.customerId == request.auth.uid
+          && resource.data.status == "COMPLETED"
+          && resource.data.get("customerConfirmed", false) == false
+          && request.resource.data.customerId == resource.data.customerId
+          && request.resource.data.status == resource.data.status
+          && request.resource.data.technicianId == resource.data.technicianId
+          && request.resource.data.customerConfirmed == true
+          && request.resource.data.customerRating is number
+          && request.resource.data.customerRating >= 1
+          && request.resource.data.customerRating <= 5
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "customerConfirmed", "customerConfirmedAt", "customerRating", "customerNote", "updatedAt"
+          ])
+        ) ||
+        // Technician can add job evidence while the job is being worked on.
+        (
+          isAssignedTechnician()
+          && resource.data.status in ["ARRIVED", "IN_PROGRESS"]
+          && request.resource.data.customerId == resource.data.customerId
+          && request.resource.data.technicianId == resource.data.technicianId
+          && request.resource.data.customerName == resource.data.customerName
+          && request.resource.data.customerPhone == resource.data.customerPhone
+          && request.resource.data.problemType == resource.data.problemType
+          && request.resource.data.description == resource.data.description
+          && request.resource.data.location == resource.data.location
+          && request.resource.data.photoUrls == resource.data.photoUrls
+          && request.resource.data.status == resource.data.status
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.get("customerConfirmed", false) == resource.data.get("customerConfirmed", false)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "beforePhotoUrls", "afterPhotoUrls", "completionNote", "updatedAt"
+          ])
+        ) ||
         // Assigned technician can move only their own job through the approved workflow.
         (
           isAssignedTechnician()
@@ -112,15 +148,22 @@ service cloud.firestore {
           && request.resource.data.description == resource.data.description
           && request.resource.data.location == resource.data.location
           && request.resource.data.photoUrls == resource.data.photoUrls
+          && request.resource.data.get("beforePhotoUrls", []) == resource.data.get("beforePhotoUrls", [])
           && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.get("customerConfirmed", false) == resource.data.get("customerConfirmed", false)
           && (
             (resource.data.status == "ENGINEER_ASSIGNED" && request.resource.data.status in ["ENGINEER_ON_WAY", "REJECTED"]) ||
             (resource.data.status == "ENGINEER_ON_WAY" && request.resource.data.status in ["ARRIVED", "REJECTED"]) ||
             (resource.data.status == "ARRIVED" && request.resource.data.status in ["IN_PROGRESS", "REJECTED"]) ||
             (resource.data.status == "IN_PROGRESS" && request.resource.data.status in ["COMPLETED", "REJECTED"])
           )
+          && (
+            request.resource.data.status != "COMPLETED" ||
+            (request.resource.data.afterPhotoUrls.size() > 0 && request.resource.data.completionNote is string && request.resource.data.completionNote.size() > 0)
+          )
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            "status", "onTheWayAt", "arrivedAt", "startedAt", "completedAt", "updatedAt"
+            "status", "onTheWayAt", "arrivedAt", "startedAt", "completedAt", "updatedAt",
+            "beforePhotoUrls", "afterPhotoUrls", "completionNote"
           ])
         )
       );

@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, setDoc, where } from "firebase/firestore";
-import { ArrowLeft, CheckCircle2, LogOut, MapPin, Navigation, PlayCircle, RefreshCw, ShieldCheck, UserCog, Wrench, XCircle } from "lucide-react";
+import { ArrowLeft, Camera, CheckCircle2, LogOut, MapPin, Navigation, PlayCircle, RefreshCw, ShieldCheck, UserCog, Wrench, XCircle } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { getUserProfile } from "@/lib/user";
 import { updateTechnicianStatus } from "@/lib/technician";
+import { completeJob, saveJobPhotos, uploadJobPhotos } from "@/lib/job";
 import type { ReportStatus } from "@/lib/report";
 
 type Report = Record<string, any>;
@@ -35,6 +36,10 @@ export default function TechnicianPage() {
   const [checking, setChecking] = useState(true);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [jobModal, setJobModal] = useState<Report | null>(null);
+  const [jobPhotos, setJobPhotos] = useState<File[]>([]);
+  const [completionNote, setCompletionNote] = useState("");
+  const [photoBusy, setPhotoBusy] = useState(false);
   const watchRef = useRef<number | null>(null);
   const lastWriteRef = useRef<Record<string, {lat:number;lng:number;at:number}>>({});
 
@@ -120,6 +125,32 @@ export default function TechnicianPage() {
     finally { setBusy(""); }
   }
 
+  function pickPhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const incoming = Array.from(e.target.files ?? []).filter(f => f.type.startsWith("image/"));
+    setJobPhotos(prev => [...prev, ...incoming].slice(0, 8));
+  }
+
+  async function saveBeforePhotos(report: Report) {
+    if (!jobPhotos.length) return;
+    try {
+      setPhotoBusy(true); setError("");
+      const urls = await uploadJobPhotos({ reportId: report.id, kind: "before", photos: jobPhotos, existingUrls: report.beforePhotoUrls || [] });
+      await saveJobPhotos({ reportId: report.id, kind: "before", urls });
+      setJobPhotos([]); setJobModal(null);
+    } catch (err:any) { setError(err?.message || "Foto sebelum perbaikan gagal disimpan."); }
+    finally { setPhotoBusy(false); }
+  }
+
+  async function finishJob(report: Report) {
+    try {
+      setPhotoBusy(true); setError("");
+      const urls = await uploadJobPhotos({ reportId: report.id, kind: "after", photos: jobPhotos, existingUrls: report.afterPhotoUrls || [] });
+      await completeJob({ reportId: report.id, currentStatus: report.status, afterPhotoUrls: urls, completionNote });
+      setJobPhotos([]); setCompletionNote(""); setJobModal(null);
+    } catch (err:any) { setError(err?.message || "Penyelesaian pekerjaan gagal disimpan."); }
+    finally { setPhotoBusy(false); }
+  }
+
   async function logout() { try { if (auth) await signOut(auth); } finally { window.location.href = "/"; } }
 
   if (checking) return <div className="admin-loading"><div className="admin-loader"/><b>Memverifikasi akses teknisi...</b></div>;
@@ -146,9 +177,19 @@ export default function TechnicianPage() {
           <p className="muted">{r.description || "—"}</p>
           {r.customerName && <p><b>Pelanggan:</b> {r.customerName} {r.customerPhone ? `• ${r.customerPhone}` : ""}</p>}
           {r.location && <p className="muted" style={{fontSize:13}}><MapPin size={15} style={{verticalAlign:"middle",marginRight:5}}/>{r.location.address || `${Number(r.location.latitude).toFixed(5)}, ${Number(r.location.longitude).toFixed(5)}`}</p>}
-          {actions[r.status]?.length ? <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:15}}>{actions[r.status].map(a => { const Icon=a.icon; return <button key={a.status} className={`btn ${a.status === "REJECTED" ? "btn-secondary" : "btn-primary"}`} disabled={busy===r.id} onClick={()=>changeStatus(r,a.status)}><Icon size={16}/>{busy===r.id ? "Memproses..." : a.label}</button> })}</div> : null}
+          {actions[r.status]?.length ? <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:15}}>{actions[r.status].map(a => { const Icon=a.icon; if (a.status === "COMPLETED") return <button key={a.status} className="btn btn-primary" disabled={busy===r.id} onClick={()=>{setJobModal(r);setJobPhotos([]);setCompletionNote(r.completionNote || "")}}><Icon size={16}/>Selesaikan & unggah bukti</button>; return <button key={a.status} className={`btn ${a.status === "REJECTED" ? "btn-secondary" : "btn-primary"}`} disabled={busy===r.id} onClick={()=>changeStatus(r,a.status)}><Icon size={16}/>{busy===r.id ? "Memproses..." : a.label}</button> })}</div> : null}
+          {(r.status === "ARRIVED" || r.status === "IN_PROGRESS") && <div style={{marginTop:12}}><button className="btn btn-secondary" onClick={()=>{setJobModal(r);setJobPhotos([]);setCompletionNote("")}}>📷 Tambah foto sebelum perbaikan</button></div>}
+          {r.beforePhotoUrls?.length > 0 && <div className="job-photo-strip"><b>Foto sebelum ({r.beforePhotoUrls.length})</b><div>{r.beforePhotoUrls.map((u:string)=><img key={u} src={u} alt="Sebelum perbaikan" loading="lazy"/>)}</div></div>}
+          {r.afterPhotoUrls?.length > 0 && <div className="job-photo-strip"><b>Foto sesudah ({r.afterPhotoUrls.length})</b><div>{r.afterPhotoUrls.map((u:string)=><img key={u} src={u} alt="Sesudah perbaikan" loading="lazy"/>)}</div></div>}
+          {r.completionNote && <div className="job-note"><b>Catatan hasil:</b> {r.completionNote}</div>}
         </article>)}
       </section>
+      {jobModal && <div className="job-modal-backdrop" onClick={()=>!photoBusy && setJobModal(null)}><div className="job-modal" onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center"}}><div><span className="eyebrow"><Camera size={16}/> Bukti pekerjaan</span><h3 style={{margin:"10px 0 4px"}}>{jobModal.status === "IN_PROGRESS" ? "Dokumentasi pekerjaan" : "Selesaikan pekerjaan"}</h3><p className="muted" style={{fontSize:13}}>Maksimal 8 foto per tahap.</p></div><button className="btn btn-secondary" onClick={()=>setJobModal(null)} disabled={photoBusy}>Tutup</button></div>
+        <div className="job-photo-grid">{jobPhotos.map((f,i)=><div className="job-photo-preview" key={`${f.name}-${i}`}><img src={URL.createObjectURL(f)} alt="Preview"/><button onClick={()=>setJobPhotos(prev=>prev.filter((_,x)=>x!==i))}>×</button></div>)}<label className="job-photo-add">+<input type="file" accept="image/*" capture="environment" multiple onChange={pickPhotos}/></label></div>
+        {jobModal.status === "IN_PROGRESS" && <div className="field"><label>Catatan hasil pekerjaan *</label><textarea className="textarea" value={completionNote} onChange={e=>setCompletionNote(e.target.value)} placeholder="Contoh: MCB diganti dan instalasi sudah diuji normal."/></div>}
+        <div style={{display:"flex",gap:10,justifyContent:"flex-end",flexWrap:"wrap",marginTop:15}}>{jobModal.status === "IN_PROGRESS" ? <button className="btn btn-primary" disabled={photoBusy} onClick={()=>finishJob(jobModal)}><CheckCircle2 size={17}/>{photoBusy ? "Menyimpan..." : "Selesaikan pekerjaan"}</button> : <button className="btn btn-primary" disabled={photoBusy || !jobPhotos.length} onClick={()=>saveBeforePhotos(jobModal)}><Camera size={16}/>{photoBusy ? "Mengunggah..." : "Simpan foto sebelum"}</button>}</div>
+      </div></div>}
       <p className="muted" style={{fontSize:12,textAlign:"center",marginTop:25}}><RefreshCw size={13} style={{verticalAlign:"middle"}}/> Data pekerjaan diperbarui realtime.</p>
     </main>
   </div>;

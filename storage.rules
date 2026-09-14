@@ -13,17 +13,27 @@ service firebase.storage {
       return firestore.get(/databases/(default)/documents/reports/$(reportId));
     }
 
-    match /reports/{reportId}/{fileName} {
+    match /reports/{reportId}/{fileName=**} {
       allow read: if signedIn() && (
         isAdmin()
         || reportDoc(reportId).data.customerId == request.auth.uid
         || (isTechnician() && reportDoc(reportId).data.technicianId == request.auth.uid)
       );
       allow write: if signedIn()
-        && reportDoc(reportId).data.customerId == request.auth.uid
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/.*')
-        && resource == null;
+        && resource == null
+        && (
+          (reportDoc(reportId).data.customerId == request.auth.uid)
+          || (
+            isTechnician()
+            && reportDoc(reportId).data.technicianId == request.auth.uid
+            && (
+              (fileName.matches('^before/.*') && reportDoc(reportId).data.status in ['ARRIVED', 'IN_PROGRESS'])
+              || (fileName.matches('^after/.*') && reportDoc(reportId).data.status in ['ARRIVED', 'IN_PROGRESS'])
+            )
+          )
+        );
     }
 
     match /profiles/{userId}/{fileName} {
