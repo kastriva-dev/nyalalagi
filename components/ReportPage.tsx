@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -11,157 +11,341 @@ import { createReport } from "@/lib/report";
 import LocationPicker from "./LocationPicker";
 
 const problems = [
-  "Listrik padam total", "Sebagian listrik mati", "MCB turun",
-  "Korsleting", "Stop kontak bermasalah", "Lampu tidak menyala",
-  "Kabel / instalasi bermasalah", "Lainnya"
+  "Listrik padam total",
+  "Listrik padam sebagian",
+  "Sering konslet",
+  "Instalasi kurang aman",
+  "Perlu penambahan titik",
+  "Lainnya",
 ];
 
 export default function ReportPage() {
-  const [user,setUser] = useState<User|null>(null);
-  const [name,setName] = useState("");
-  const [phone,setPhone] = useState("");
-  const [problem,setProblem] = useState("");
-  const [description,setDescription] = useState("");
-  const [address,setAddress] = useState("");
-  const [lat,setLat] = useState<number|null>(null);
-  const [lng,setLng] = useState<number|null>(null);
-  const [accuracy,setAccuracy] = useState<number|undefined>();
-  const [photos,setPhotos] = useState<File[]>([]);
-  const [sending,setSending] = useState(false);
-  const [done,setDone] = useState("");
-  const [error,setError] = useState("");
+  const [user, setUser] = useState<User | null>(null);
+  const [problem, setProblem] = useState("");
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    const firebaseAuth = auth;
-    if (!firebaseAuth) return;
-
-    return onAuthStateChanged(firebaseAuth, (u) => {
-      if (u && !u.isAnonymous) setUser(u);
-      else window.location.href = "/login";
+    if (!firebaseReady) {
+      setAuthReady(true);
+      return;
+    }
+    const unsubscribe = onAuthStateChanged(auth!, (currentUser) => {
+      setUser(currentUser && !currentUser.isAnonymous ? currentUser : null);
+      setAuthReady(true);
     });
+    return () => unsubscribe();
   }, []);
 
-  const previews = useMemo(() => photos.map(f => ({file:f,url:URL.createObjectURL(f)})), [photos]);
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
-  function addPhotos(e: React.ChangeEvent<HTMLInputElement>) {
-    const incoming = Array.from(e.target.files ?? []).filter(f => f.type.startsWith("image/"));
-    setPhotos(prev => [...prev, ...incoming].slice(0,5));
-  }
-
-  async function submit(e: React.FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!firebaseReady || !user) return setError("Firebase belum siap. Periksa konfigurasi .env.local dan koneksi.");
-    if (!name.trim() || !phone.trim()) return setError("Nama dan nomor WhatsApp wajib diisi.");
-    if (!problem) return setError("Pilih jenis masalah listrik.");
-    if (!lat || !lng) return setError("Silakan ambil atau pilih lokasi perbaikan di peta.");
-    if (!description.trim()) return setError("Jelaskan masalah listrik Anda.");
+
+    if (!problem || !description || !location) {
+      setError("Mohon lengkapi semua field yang diperlukan");
+      return;
+    }
+
+    setLoading(true);
     try {
-      setSending(true);
-      const id = await createReport({
-        uid:user.uid, name, phone, problemType:problem, description,
-        location:{latitude:lat, longitude:lng, accuracy, capturedAt:new Date().toISOString(), address},
-        photos
+      if (!user || !location) {
+        setError("Data tidak lengkap");
+        setLoading(false);
+        return;
+      }
+
+      await createReport({
+        uid: user.uid,
+        name: user.displayName || user.email?.split("@")[0] || "User",
+        phone: "",
+        problemType: problem,
+        description,
+        location: {
+          latitude: location.lat,
+          longitude: location.lng,
+          capturedAt: new Date().toISOString(),
+        },
+        photos: image ? [image] : [],
       });
-      setDone(id);
-    } catch (err:any) {
-      setError(err?.message || "Laporan gagal dikirim.");
-    } finally { setSending(false); }
-  }
+      setSuccess(true);
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 2000);
+    } catch (err: any) {
+      setError(err.message || "Gagal membuat laporan");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  async function logout() {
-    try { if (auth) await signOut(auth); } finally { window.location.href = "/"; }
-  }
+  const handleLogout = async () => {
+    try {
+      if (!auth) return;
+      await signOut(auth);
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  };
 
-  if (done) return (
-    <div className="page-shell">
-      <header className="app-header"><div className="container app-header-inner">
-        <Link href="/" className="app-brand"><Image src="/company/logo.png" alt="" width={38} height={38}/> NyalaLagi</Link>
-        <button type="button" className="btn btn-primary" onClick={logout}><LogOut size={16}/> Keluar</button>
-      </div></header>
-      <div className="container form-wrap">
-        <div className="form-card" style={{maxWidth:650,margin:"60px auto",textAlign:"center"}}>
-          <CheckCircle2 size={70} style={{color:"var(--green)"}}/>
-          <h1 style={{fontSize:40,marginTop:18}}>Laporan berhasil dibuat</h1>
-          <p className="muted">Permintaan Anda sudah masuk ke sistem NyalaLagi.</p>
-          <div className="location-box" style={{textAlign:"left",margin:"24px 0"}}>
-            <b>Nomor laporan</b>
-            <div style={{fontSize:22,fontWeight:900,marginTop:6}}>NYL-{done.slice(0,8).toUpperCase()}</div>
-            <p className="muted" style={{margin:"10px 0 0"}}>Status awal: Mencari teknisi terdekat.</p>
-          </div>
-          <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-            <Link href="/laporan" className="btn btn-primary">Lihat laporan</Link>
-            <Link href="/" className="btn btn-secondary">Kembali ke beranda</Link>
-          </div>
+  if (!authReady || !user) {
+    return (
+      <div className="hero">
+        <div className="loading">
+          <span></span>
+          <span></span>
+          <span></span>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
-    <div className="page-shell">
-      <header className="app-header"><div className="container app-header-inner">
-        <Link href="/" className="app-brand"><Image src="/company/logo.png" alt="" width={38} height={38}/> NyalaLagi</Link>
-        <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-          <Link href="/" className="btn btn-secondary"><ArrowLeft size={16}/> Beranda</Link>
-          <button type="button" className="btn btn-primary" onClick={logout}><LogOut size={16}/> Keluar</button>
+    <>
+      {/* Navigation */}
+      <nav>
+        <div className="nav-inner">
+          <Link href="/" className="nav-brand">
+            <Zap size={24} />
+            NyalaLagi
+          </Link>
+          <button onClick={handleLogout} className="btn btn-secondary btn-sm">
+            <LogOut size={16} />
+            Logout
+          </button>
         </div>
-      </div></header>
+      </nav>
 
-      <main className="container form-wrap">
-        <div style={{marginBottom:24}}>
-          <span className="eyebrow"><Zap size={15}/> Laporan gangguan</span>
-          <h1 style={{fontSize:"clamp(34px,5vw,54px)",margin:"15px 0 10px"}}>Laporkan masalah listrik</h1>
-          <p className="muted">Isi masalah, lokasi perbaikan dan foto kerusakan. Lokasi GPS membantu sistem menemukan teknisi terdekat.</p>
-        </div>
+      {/* Main Content */}
+      <main className="section">
+        <div className="container">
+          <div style={{ maxWidth: "720px", margin: "0 auto" }}>
+            {/* Header */}
+            <div style={{ marginBottom: "var(--space-3xl)" }}>
+              <Link href="/" className="btn btn-ghost btn-sm" style={{ marginBottom: "var(--space-lg)" }}>
+                <ArrowLeft size={16} />
+                Kembali
+              </Link>
+              <h1 style={{ marginBottom: "var(--space-md)" }}>Buat Laporan Kerusakan</h1>
+              <p style={{ color: "var(--gray-400)" }}>
+                Laporkan masalah kelistrikan yang Anda alami. Tim teknisi kami akan segera merespons.
+              </p>
+            </div>
 
-        <form onSubmit={submit} className="form-layout">
-          <div className="form-card">
-            <div className="field">
-              <label>Nama pelanggan *</label>
-              <input className="input" value={name} onChange={e=>setName(e.target.value)} placeholder="Nama lengkap"/>
+            {/* Form Card */}
+            <div className="glass-card">
+              {/* Success Message */}
+              {success && (
+                <div
+                  className="alert alert-success"
+                  style={{ marginBottom: "var(--space-lg)", display: "flex", alignItems: "center", gap: "var(--space-md)" }}
+                >
+                  <CheckCircle2 size={20} />
+                  <div>
+                    <strong>Laporan Berhasil Dibuat!</strong>
+                    <p style={{ fontSize: "0.875rem", marginTop: "var(--space-sm)" }}>
+                      Tim teknisi kami akan menghubungi Anda segera.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {error && (
+                <div className="alert alert-error" style={{ marginBottom: "var(--space-lg)" }}>
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "var(--space-2xl)" }}>
+                {/* Problem Type */}
+                <div className="form-group">
+                  <label className="form-label">
+                    <Zap size={16} style={{ display: "inline", marginRight: "var(--space-sm)" }} />
+                    Jenis Masalah
+                  </label>
+                  <select
+                    className="form-select"
+                    value={problem}
+                    onChange={(e) => setProblem(e.target.value)}
+                    required
+                  >
+                    <option value="">Pilih jenis masalah</option>
+                    {problems.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Description */}
+                <div className="form-group">
+                  <label className="form-label">Deskripsi Masalah</label>
+                  <textarea
+                    className="form-textarea"
+                    placeholder="Jelaskan masalah yang Anda alami dengan detail..."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    required
+                  />
+                  <p style={{ fontSize: "0.875rem", color: "var(--gray-400)" }}>
+                    {description.length}/500 karakter
+                  </p>
+                </div>
+
+                {/* Location */}
+                <div className="form-group">
+                  <label className="form-label">
+                    <MapPin size={16} style={{ display: "inline", marginRight: "var(--space-sm)" }} />
+                    Lokasi Masalah
+                  </label>
+                  <LocationPicker
+                    onLocationChange={setLocation}
+                    currentLocation={location}
+                  />
+                </div>
+
+                {/* Image Upload */}
+                <div className="form-group">
+                  <label className="form-label">
+                    <Camera size={16} style={{ display: "inline", marginRight: "var(--space-sm)" }} />
+                    Foto Masalah
+                  </label>
+
+                  {imagePreview ? (
+                    <div
+                      style={{
+                        position: "relative",
+                        borderRadius: "var(--radius-lg)",
+                        overflow: "hidden",
+                        border: "1px solid var(--glass-border)",
+                      }}
+                    >
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        style={{
+                          width: "100%",
+                          height: "300px",
+                          objectFit: "cover",
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImage(null);
+                          setImagePreview("");
+                        }}
+                        style={{
+                          position: "absolute",
+                          top: "var(--space-md)",
+                          right: "var(--space-md)",
+                          background: "rgba(0,0,0,0.6)",
+                          border: "none",
+                          borderRadius: "var(--radius-full)",
+                          color: "white",
+                          cursor: "pointer",
+                          padding: "var(--space-md)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "var(--space-3xl) var(--space-lg)",
+                        border: "2px dashed var(--glass-border)",
+                        borderRadius: "var(--radius-lg)",
+                        cursor: "pointer",
+                        transition: "all var(--transition-base)",
+                        backgroundColor: "rgba(59, 130, 246, 0.05)",
+                      }}
+                    >
+                      <Camera size={32} style={{ color: "var(--accent-blue)", marginBottom: "var(--space-md)" }} />
+                      <span style={{ fontWeight: "600", marginBottom: "var(--space-sm)" }}>Klik atau drag untuk upload</span>
+                      <span style={{ fontSize: "0.875rem", color: "var(--gray-400)" }}>
+                        JPG, PNG, atau GIF (Max 5MB)
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        style={{ display: "none" }}
+                      />
+                    </label>
+                  )}
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={loading}
+                  style={{ width: "100%", marginTop: "var(--space-lg)" }}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
+                      Mengirim laporan...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={18} />
+                      Kirim Laporan
+                    </>
+                  )}
+                </button>
+              </form>
             </div>
-            <div className="field">
-              <label>Nomor WhatsApp *</label>
-              <input className="input" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="08xxxxxxxxxx" inputMode="tel"/>
-            </div>
-            <div className="field">
-              <label>Jenis masalah *</label>
-              <div className="problem-grid">
-                {problems.map(p => <button type="button" key={p} className={`problem-option ${problem===p?"active":""}`} onClick={()=>setProblem(p)}>{p}</button>)}
-              </div>
-            </div>
-            <div className="field">
-              <label>Deskripsi masalah *</label>
-              <textarea className="textarea" value={description} onChange={e=>setDescription(e.target.value)} placeholder="Contoh: listrik rumah tiba-tiba mati sejak pukul 19.00, MCB sudah dicek..."/>
-            </div>
-            <div className="field">
-              <label>Foto kerusakan</label>
-              <div className="photo-grid">
-                {previews.map((p,i)=><div className="photo-item" key={p.url}><img src={p.url} alt="Preview"/><button type="button" className="remove-photo" onClick={()=>setPhotos(prev=>prev.filter((_,x)=>x!==i))}><X size={14}/></button></div>)}
-                {photos.length<5 && <label className="photo-item" style={{display:"grid",placeItems:"center",cursor:"pointer",background:"#fafbff"}}><Camera/><input type="file" accept="image/*" capture="environment" multiple onChange={addPhotos} style={{display:"none"}}/></label>}
-              </div>
-              <small className="muted">Maksimal 5 foto. Anda dapat mengambil foto langsung dari kamera HP.</small>
+
+            {/* Info Section */}
+            <div style={{ marginTop: "var(--space-3xl)", padding: "var(--space-2xl)", backgroundColor: "rgba(59, 130, 246, 0.1)", borderRadius: "var(--radius-lg)", border: "1px solid var(--glass-border)" }}>
+              <h4 style={{ marginBottom: "var(--space-md)" }}>Informasi Penting</h4>
+              <ul style={{ listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: "var(--space-sm)" }}>
+                <li style={{ display: "flex", gap: "var(--space-md)" }}>
+                  <CheckCircle2 size={20} style={{ color: "var(--accent-emerald)", flexShrink: 0 }} />
+                  <span>Respon cepat dalam 2-4 jam kerja</span>
+                </li>
+                <li style={{ display: "flex", gap: "var(--space-md)" }}>
+                  <CheckCircle2 size={20} style={{ color: "var(--accent-emerald)", flexShrink: 0 }} />
+                  <span>Teknisi berstandar nasional</span>
+                </li>
+                <li style={{ display: "flex", gap: "var(--space-md)" }}>
+                  <CheckCircle2 size={20} style={{ color: "var(--accent-emerald)", flexShrink: 0 }} />
+                  <span>Garansi perbaikan 30 hari</span>
+                </li>
+              </ul>
             </div>
           </div>
-
-          <div className="form-card">
-            <h3><MapPin size={18} style={{verticalAlign:"middle",marginRight:7}}/> Lokasi perbaikan</h3>
-            <p className="muted" style={{fontSize:13}}>Izinkan akses lokasi untuk mengirim koordinat dan akurasi GPS saat laporan dibuat.</p>
-            <LocationPicker latitude={lat} longitude={lng} onChange={(a,b,c)=>{setLat(a);setLng(b);setAccuracy(c)}}/>
-            <div className="field" style={{marginTop:18}}>
-              <label>Alamat / patokan tambahan</label>
-              <textarea className="textarea" style={{minHeight:90}} value={address} onChange={e=>setAddress(e.target.value)} placeholder="Nama jalan, nomor rumah, patokan, dll."/>
-            </div>
-            {accuracy != null && <p className="muted" style={{fontSize:12}}>Akurasi GPS saat diambil: ±{Math.round(accuracy)} meter.</p>}
-            {error && <div style={{background:"#fff0f0",color:"#a32626",padding:13,borderRadius:13,margin:"15px 0"}}>{error}</div>}
-            <button disabled={sending} className="btn btn-primary" style={{width:"100%",marginTop:5}}>
-              {sending ? <><Loader2 size={18} className="spin"/> Mengirim...</> : <><Send size={18}/> Kirim Laporan</>}
-            </button>
-            <p className="muted" style={{fontSize:11,textAlign:"center",marginTop:10}}>Dengan mengirim laporan, data lokasi dan foto digunakan untuk proses pelayanan NyalaLagi.</p>
-          </div>
-        </form>
+        </div>
       </main>
-    </div>
+    </>
   );
 }
