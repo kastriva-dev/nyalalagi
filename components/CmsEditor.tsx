@@ -6,199 +6,63 @@ import { SiteContent, saveSiteContent, uploadCMSImage, mergeContent } from "@/li
 
 type Target = { kind: "text" | "image"; path: string; label: string; imageSection?: string; imageIndex?: number };
 
-function getAt(obj: any, path: string) {
-  return path.split(".").reduce((v, k) => v?.[k], obj);
-}
-
+function getAt(obj: any, path: string) { return path.split(".").reduce((v, k) => v?.[k], obj); }
 function setAt(obj: any, path: string, value: any) {
-  const keys = path.split(".");
-  let cur = obj;
-  for (let i = 0; i < keys.length - 1; i++) {
-    if (!(keys[i] in cur)) cur[keys[i]] = {};
-    cur = cur[keys[i]];
-  }
-  cur[keys[keys.length - 1]] = value;
+  const keys = path.split("."); let cur = obj;
+  keys.forEach((key, i) => { if (i === keys.length - 1) cur[key] = value; else cur = cur[key]; });
 }
+function clone<T>(v: T): T { return JSON.parse(JSON.stringify(v)); }
 
-export default function CmsEditor({ initialContent }: { initialContent: SiteContent }) {
-  const [content, setContent] = useState<SiteContent>(initialContent);
-  const [editingTarget, setEditingTarget] = useState<Target | null>(null);
-  const [tempValue, setTempValue] = useState("");
+export default function CmsEditor({ content, onClose, initialTarget }: { content: SiteContent; onClose: () => void; initialTarget?: Target | null }) {
+  const [draft, setDraft] = useState<SiteContent>(() => clone(mergeContent(content)));
+  const [target, setTarget] = useState<Target | null>(initialTarget || null);
+  const [value, setValue] = useState(() => initialTarget ? String(getAt(mergeContent(content), initialTarget.path) ?? "") : "");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState({ type: "", text: "" });
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  const targets: Target[] = [
-    { kind: "text", path: "hero.headline", label: "Hero Headline" },
-    { kind: "text", path: "hero.subheading", label: "Hero Subheading" },
-    { kind: "image", path: "hero.backgroundImage", label: "Hero Background", imageSection: "hero", imageIndex: 0 },
-    { kind: "text", path: "features.title", label: "Features Title" },
-    { kind: "text", path: "services.title", label: "Services Title" },
-    { kind: "text", path: "testimonials.title", label: "Testimonials Title" },
-  ];
+  function open(t: Target) { setTarget(t); setValue(String(getAt(draft, t.path) ?? "")); setError(""); setMessage(""); }
+  function applyText() { if (!target) return; const next = clone(draft); setAt(next, target.path, value); setDraft(next); setMessage("Perubahan teks diterapkan. Klik Simpan untuk menerbitkan."); }
+  async function handleImage(file: File) {
+    if (!target) return;
+    try { setUploading(true); setError(""); const url = await uploadCMSImage(file, target.imageSection || target.path.replaceAll(".", "-"), target.imageIndex); const next = clone(draft); setAt(next, target.path, url); setDraft(next); setValue(url); setMessage("Gambar berhasil diunggah."); }
+    catch (e: any) { setError(e?.message || "Upload gambar gagal."); } finally { setUploading(false); }
+  }
+  async function save() {
+    try { setSaving(true); setError(""); const normalized = mergeContent(draft); setDraft(normalized); await saveSiteContent(normalized); setMessage("CMS berhasil disimpan. 6 portfolio dipertahankan dan landing page akan memakai perubahan terbaru."); }
+    catch (e: any) { setError(e?.message || "Gagal menyimpan CMS."); } finally { setSaving(false); }
+  }
 
-  const handleEditClick = (target: Target) => {
-    const value = getAt(content, target.path);
-    setTempValue(typeof value === "string" ? value : "");
-    setEditingTarget(target);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingTarget) return;
-
-    const updated = { ...content };
-    setAt(updated, editingTarget.path, tempValue);
-    setContent(updated);
-    setEditingTarget(null);
-    setMessage({ type: "success", text: "Perubahan disimpan secara lokal." });
-
-    setTimeout(() => setMessage({ type: "", text: "" }), 3000);
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !editingTarget) return;
-
-    setUploading(true);
-    try {
-      const section = editingTarget.imageSection || "general";
-      const index = editingTarget.imageIndex;
-      const url = await uploadCMSImage(file, section, index);
-      const updated = { ...content };
-      setAt(updated, editingTarget.path, url);
-      setContent(updated);
-      setEditingTarget(null);
-      setMessage({ type: "success", text: "Gambar berhasil diunggah." });
-    } catch (err: any) {
-      setMessage({ type: "error", text: err.message || "Gagal mengunggah gambar" });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleSaveAll = async () => {
-    setSaving(true);
-    try {
-      const merged = mergeContent(content);
-      await saveSiteContent(merged);
-      setMessage({ type: "success", text: "Semua perubahan berhasil disimpan!" });
-    } catch (err: any) {
-      setMessage({ type: "error", text: err.message || "Gagal menyimpan perubahan" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "var(--space-2xl) 0" }}>
-      <h1 style={{ marginBottom: "var(--space-md)" }}>CMS Editor</h1>
-      <p style={{ color: "var(--gray-400)", marginBottom: "var(--space-2xl)" }}>
-        Edit konten situs langsung dari dashboard ini.
-      </p>
-
-      {message.text && (
-        <div
-          className={`alert ${message.type === "success" ? "alert-success" : "alert-error"}`}
-          style={{ marginBottom: "var(--space-2xl)" }}
-        >
-          {message.text}
+  return <div className="cms-modal-backdrop" onMouseDown={e => e.target === e.currentTarget && onClose()}>
+    <div className="cms-modal">
+      <header className="cms-modal-head"><div><span className="eyebrow">NYALALAGI CMS</span><h2>Edit Website</h2><p>Ubah tulisan dan gambar langsung tanpa menyentuh source code.</p></div><button className="cms-icon-button" onClick={onClose}><X size={19}/></button></header>
+      <div className="cms-modal-body">
+        <div className="cms-sidebar">
+          <h3>Konten</h3>
+          <button onClick={() => open({kind:"text",path:"hero.eyebrow",label:"Hero eyebrow"})}>Hero eyebrow</button>
+          <button onClick={() => open({kind:"text",path:"hero.title",label:"Hero judul"})}>Hero judul</button>
+          <button onClick={() => open({kind:"text",path:"hero.highlight",label:"Hero highlight"})}>Hero highlight</button>
+          <button onClick={() => open({kind:"text",path:"hero.description",label:"Hero deskripsi"})}>Hero deskripsi</button>
+          <button onClick={() => open({kind:"image",path:"hero.image",label:"Hero image",imageSection:"hero"})}>Hero image</button>
+          <button onClick={() => open({kind:"text",path:"about.title",label:"Tentang judul"})}>Tentang</button>
+          <button onClick={() => open({kind:"image",path:"about.image",label:"Tentang image",imageSection:"about"})}>Tentang image</button>
+          {draft.services.map((s, i) => <button key={`s-${i}`} onClick={() => open({kind:"image",path:`services.${i}.image`,label:`Layanan ${i+1} image`,imageSection:"services",imageIndex:i})}>Layanan {i+1} image</button>)}
+          {draft.portfolio.slice(0, 6).map((p, i) => <button key={`p-${i}`} onClick={() => open({kind:"image",path:`portfolio.${i}.image`,label:`Portfolio ${i+1} image`,imageSection:"portfolio",imageIndex:i})}>Portfolio {i+1} image</button>)}
+          <button onClick={() => open({kind:"text",path:"partner.title",label:"Mitra teknisi"})}>Mitra teknisi</button>
+          <button onClick={() => open({kind:"text",path:"vision.title",label:"Visi & Misi"})}>Visi & Misi</button>
+          <button onClick={() => open({kind:"text",path:"cta.title",label:"CTA"})}>CTA</button>
+          <button onClick={() => open({kind:"text",path:"footer.address",label:"Alamat footer"})}>Footer</button>
         </div>
-      )}
-
-      <div style={{ display: "grid", gap: "var(--space-2xl)" }}>
-        {/* Edit Modal */}
-        {editingTarget && (
-          <div className="glass-card">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-lg)" }}>
-              <h3 style={{ margin: 0 }}>Edit: {editingTarget.label}</h3>
-              <button onClick={() => setEditingTarget(null)} className="btn btn-ghost btn-icon">
-                <X size={20} />
-              </button>
-            </div>
-
-            {editingTarget.kind === "text" ? (
-              <>
-                <textarea
-                  className="form-textarea"
-                  value={tempValue}
-                  onChange={(e) => setTempValue(e.target.value)}
-                  style={{ marginBottom: "var(--space-lg)" }}
-                  rows={5}
-                />
-                <button onClick={handleSaveEdit} className="btn btn-primary">
-                  <Check size={18} />
-                  Simpan Perubahan
-                </button>
-              </>
-            ) : (
-              <>
-                <label
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "var(--space-3xl) var(--space-lg)",
-                    border: "2px dashed var(--glass-border)",
-                    borderRadius: "var(--radius-lg)",
-                    cursor: "pointer",
-                    transition: "all var(--transition-base)",
-                    backgroundColor: "rgba(59, 130, 246, 0.05)",
-                    marginBottom: "var(--space-lg)",
-                  }}
-                >
-                  <ImagePlus size={32} style={{ color: "var(--accent-blue)", marginBottom: "var(--space-md)" }} />
-                  <span style={{ fontWeight: "600", marginBottom: "var(--space-sm)" }}>Klik untuk pilih gambar</span>
-                  <span style={{ fontSize: "0.875rem", color: "var(--gray-400)" }}>
-                    JPG, PNG, atau GIF (Max 5MB)
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    disabled={uploading}
-                    style={{ display: "none" }}
-                  />
-                </label>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Edit Targets */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "var(--space-lg)" }}>
-          {targets.map((target) => (
-            <div key={`${target.path}`} className="glass-card">
-              <p style={{ fontSize: "0.875rem", color: "var(--gray-400)", margin: "0 0 var(--space-md) 0" }}>
-                {target.label}
-              </p>
-              <p style={{ color: "var(--gray-300)", marginBottom: "var(--space-lg)", minHeight: "3em", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {getAt(content, target.path)?.toString().substring(0, 100)}...
-              </p>
-              <button onClick={() => handleEditClick(target)} className="btn btn-secondary btn-sm" style={{ width: "100%" }}>
-                {target.kind === "text" ? "Edit Teks" : "Ganti Gambar"}
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* Save All */}
-        <div style={{ textAlign: "center", paddingTop: "var(--space-2xl)", borderTop: "1px solid var(--glass-border)" }}>
-          <button onClick={handleSaveAll} disabled={saving} className="btn btn-primary btn-lg">
-            {saving ? (
-              <>
-                <Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} />
-                Menyimpan...
-              </>
-            ) : (
-              <>
-                <Save size={20} />
-                Simpan Semua Perubahan
-              </>
-            )}
-          </button>
+        <div className="cms-editor-pane">
+          {!target ? <div className="cms-empty"><ImagePlus size={30}/><h3>Pilih konten</h3><p>Pilih elemen di kiri untuk mengubahnya.</p></div> : <>
+            <div className="cms-field-head"><div><span>EDIT</span><h3>{target.label}</h3></div>{target.kind === "text" && <button className="btn btn-secondary" onClick={applyText}><Check size={16}/> Terapkan</button>}</div>
+            {target.kind === "text" ? <textarea className="cms-textarea" value={value} onChange={e=>setValue(e.target.value)} rows={9}/> : <div className="cms-image-editor"><div className="cms-preview-image">{value ? <img src={value} alt="Preview"/> : <ImagePlus size={42}/>}</div><label className="cms-upload"><ImagePlus size={18}/><span>{uploading ? "Mengunggah..." : "Ganti gambar"}</span><input type="file" accept="image/*" disabled={uploading} onChange={e=>e.target.files?.[0] && handleImage(e.target.files[0])}/></label><small>JPG, PNG, WEBP. Gunakan gambar dengan rasio sesuai area agar hasil tetap rapi.</small></div>}
+          </>}
+          {message && <div className="cms-message success">{message}</div>}{error && <div className="cms-message error">{error}</div>}
         </div>
       </div>
+      <footer className="cms-modal-foot"><span>Perubahan tersimpan di Firestore dan gambar di Firebase Storage.</span><button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? <><Loader2 size={17} className="spin"/> Menyimpan...</> : <><Save size={17}/> Simpan Perubahan</>}</button></footer>
     </div>
-  );
+  </div>;
 }
