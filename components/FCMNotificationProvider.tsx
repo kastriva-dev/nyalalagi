@@ -14,10 +14,16 @@ export default function FCMNotificationProvider() {
 
   const registerNotifications = useCallback(async () => {
     if (!app || !auth || !db || !vapidKey || typeof window === "undefined") return false;
+
+    // Keep non-null references stable across awaits/callbacks for TypeScript.
+    const firebaseApp = app;
+    const firebaseAuth = auth;
+    const firestore = db;
+
     if (!("Notification" in window) || !("serviceWorker" in navigator)) return false;
     if (!(await isSupported())) return false;
 
-    const user = auth.currentUser;
+    const user = firebaseAuth.currentUser;
     if (!user || user.isAnonymous) return false;
 
     const permission = Notification.permission === "granted"
@@ -27,7 +33,7 @@ export default function FCMNotificationProvider() {
     if (permission !== "granted") return false;
 
     const registration = await navigator.serviceWorker.ready;
-    const messaging = getMessaging(app);
+    const messaging = getMessaging(firebaseApp);
     const token = await getToken(messaging, {
       vapidKey,
       serviceWorkerRegistration: registration
@@ -35,7 +41,7 @@ export default function FCMNotificationProvider() {
 
     if (!token) return false;
 
-    await updateDoc(doc(db, "users", user.uid), {
+    await updateDoc(doc(firestore, "users", user.uid), {
       fcm_token: token,
       updatedAt: new Date()
     });
@@ -47,9 +53,15 @@ export default function FCMNotificationProvider() {
   useEffect(() => {
     if (!auth || !db || !app) return;
 
+    // Preserve the non-null Firebase instances for callbacks below.
+    // TypeScript does not keep the outer null-check narrowing inside
+    // asynchronous callback closures.
+    const firebaseApp = app;
+    const firebaseAuth = auth;
+
     let unsubscribeMessage: (() => void) | undefined;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (user) => {
       if (!user || user.isAnonymous) return;
 
       // Register automatically when the browser has already granted permission.
@@ -59,7 +71,7 @@ export default function FCMNotificationProvider() {
 
       try {
         if (await isSupported()) {
-          const messaging = getMessaging(app);
+          const messaging = getMessaging(firebaseApp);
           unsubscribeMessage?.();
           unsubscribeMessage = onMessage(messaging, (payload) => {
             const title = payload.notification?.title || payload.data?.title || "NyalaLagi";
