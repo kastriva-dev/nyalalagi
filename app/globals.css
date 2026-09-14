@@ -1384,3 +1384,75 @@ main > #mitra::before {
   .portfolio-item,.portfolio-item img { min-height:310px !important; }
   .partner-shell { padding:30px 22px !important; }
 }
+
+/* OUR PROMISE — precision alignment with the image */
+.about-highlight {
+  display:grid !important;
+  grid-template-columns:minmax(0,1.22fr) minmax(300px,.78fr) !important;
+  align-items:stretch !important;
+  overflow:hidden !important;
+}
+.about-highlight > .cms-image-edit-wrap {
+  min-width:0 !important;
+  height:100% !important;
+  min-height:420px !important;
+}
+.about-highlight-image {
+  display:block !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:420px !important;
+  object-fit:cover !important;
+  border-radius:0 !important;
+  border:0 !important;
+}
+.about-promise-panel {
+  min-height:420px !important;
+  padding:54px 38px 42px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:flex-start !important;
+  justify-content:flex-start !important;
+  background:#fff !important;
+}
+.about-highlight-copy {
+  width:100% !important;
+  flex:0 0 auto !important;
+  padding:0 !important;
+}
+.about-highlight-copy .mini-label {
+  display:block !important;
+  margin:0 0 10px !important;
+}
+.about-highlight-copy h3 {
+  margin:0 !important;
+  max-width:440px !important;
+  line-height:1.15 !important;
+}
+.about-points {
+  width:100% !important;
+  margin-top:28px !important;
+  padding:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  justify-content:flex-start !important;
+  gap:10px !important;
+}
+.about-points span {
+  width:100% !important;
+  justify-content:flex-start !important;
+  box-sizing:border-box !important;
+  border-radius:4px !important;
+  padding:11px 13px !important;
+  background:#f6f9fc !important;
+}
+@media (max-width:900px) {
+  .about-highlight { grid-template-columns:1fr !important; }
+  .about-highlight > .cms-image-edit-wrap, .about-highlight-image, .about-promise-panel { min-height:330px !important; }
+  .about-promise-panel { padding:34px 28px 30px !important; }
+}
+@media (max-width:560px) {
+  .about-highlight > .cms-image-edit-wrap, .about-highlight-image { min-height:300px !important; }
+  .about-promise-panel { min-height:0 !important; padding:30px 22px 26px !important; }
+}
