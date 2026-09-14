@@ -172,6 +172,32 @@ service cloud.firestore {
     }
 
 
+
+    match /technicianReviews/{reviewId} {
+      allow read: if signedIn() && (
+        isAdmin() ||
+        resource.data.customerId == request.auth.uid ||
+        resource.data.technicianId == request.auth.uid
+      );
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          "reportId", "customerId", "customerName", "technicianId",
+          "rating", "comment", "createdAt"
+        ])
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.technicianId is string
+        && get(/databases/$(database)/documents/reports/$(request.resource.data.reportId)).data.customerId == request.auth.uid
+        && get(/databases/$(database)/documents/reports/$(request.resource.data.reportId)).data.technicianId == request.resource.data.technicianId
+        && get(/databases/$(database)/documents/reports/$(request.resource.data.reportId)).data.status == "COMPLETED"
+        && get(/databases/$(database)/documents/reports/$(request.resource.data.reportId)).data.customerConfirmed == false;
+
+      allow update, delete: if false;
+    }
+
     match /reportTracking/{reportId} {
       allow read: if signedIn() && (
         isAdmin() ||

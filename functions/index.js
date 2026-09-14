@@ -1,5 +1,5 @@
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
 
@@ -99,4 +99,37 @@ exports.notifyCustomerOnReportUpdated = onDocumentUpdated("reports/{reportId}", 
   const after = event.data?.after?.data();
   if (!before || !after || !changedStatus(before, after)) return;
   await notifyCustomer(event.params.reportId, after);
+});
+
+
+// Stage 6: every customer review is aggregated into the technician profile.
+// The Admin SDK bypasses client Firestore rules, so customers cannot forge
+// ratingAverage/ratingCount fields directly on a technician profile.
+exports.aggregateTechnicianRating = onDocumentCreated("technicianReviews/{reviewId}", async event => {
+  const review = event.data?.data();
+  if (!review) return;
+
+  const technicianId = review.technicianId;
+  const rating = Number(review.rating);
+  if (!technicianId || !Number.isFinite(rating) || rating < 1 || rating > 5) {
+    console.error("Invalid technician review:", event.params.reviewId);
+    return;
+  }
+
+  const technicianRef = db.collection("users").doc(String(technicianId));
+  await db.runTransaction(async transaction => {
+    const snap = await transaction.get(technicianRef);
+    const current = snap.exists ? snap.data() : {};
+    const count = Number(current?.ratingCount || 0);
+    const sum = Number(current?.ratingSum || 0);
+    const nextCount = count + 1;
+    const nextSum = sum + rating;
+
+    transaction.set(technicianRef, {
+      ratingCount: nextCount,
+      ratingSum: nextSum,
+      ratingAverage: Number((nextSum / nextCount).toFixed(2)),
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+  });
 });

@@ -19,6 +19,9 @@ export type UserProfile = {
   status: "active" | "inactive" | "blocked" | string;
   createdAt?: unknown;
   updatedAt?: unknown;
+  ratingCount?: number;
+  ratingSum?: number;
+  ratingAverage?: number;
 };
 
 export async function getUserProfile(uid: string) {

@@ -33,6 +33,8 @@ const actions: Record<string, {status: ReportStatus; label: string; icon: any}[]
 export default function TechnicianPage() {
   const [user, setUser] = useState<User|null>(null);
   const [reports, setReports] = useState<Report[]>([]);
+  const [profile, setProfile] = useState<any>(null);
+  const [reviews, setReviews] = useState<Report[]>([]);
   const [checking, setChecking] = useState(true);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -50,6 +52,7 @@ export default function TechnicianPage() {
       try {
         const profile = await getUserProfile(u.uid);
         if (profile?.role !== "technician") { window.location.href = "/laporan"; return; }
+        setProfile(profile);
         setUser(u);
       } catch { setError("Profil teknisi tidak dapat diverifikasi."); }
       finally { setChecking(false); }
@@ -60,6 +63,22 @@ export default function TechnicianPage() {
     if (!db || !user) return;
     const q = query(collection(db, "reports"), where("technicianId", "==", user.uid));
     return onSnapshot(q, snap => setReports(snap.docs.map(d => ({id:d.id, ...d.data()}))), err => setError(err.message));
+  }, [user]);
+
+  useEffect(() => {
+    if (!db || !user) return;
+    const unsubProfile = onSnapshot(doc(db, "users", user.uid), snap => setProfile(snap.exists() ? snap.data() : null));
+    const q = query(collection(db, "technicianReviews"), where("technicianId", "==", user.uid));
+    const unsubReviews = onSnapshot(q, snap => {
+      const rows = snap.docs.map(d => ({id:d.id, ...d.data()}));
+      rows.sort((a:any, b:any) => {
+        const aa = a.createdAt?.toMillis?.() || 0;
+        const bb = b.createdAt?.toMillis?.() || 0;
+        return bb - aa;
+      });
+      setReviews(rows);
+    }, err => setError(err.message));
+    return () => { unsubProfile(); unsubReviews(); };
   }, [user]);
 
   const activeReports = useMemo(() => reports.filter(r => !["COMPLETED","REJECTED","CANCELLED"].includes(r.status)), [reports]);
@@ -170,7 +189,20 @@ export default function TechnicianPage() {
         <div className="card"><small className="muted">Total tugas</small><h2 style={{margin:"6px 0 0"}}>{reports.length}</h2></div>
         <div className="card"><small className="muted">Aktif</small><h2 style={{margin:"6px 0 0"}}>{activeReports.length}</h2></div>
         <div className="card"><small className="muted">Selesai</small><h2 style={{margin:"6px 0 0"}}>{reports.filter(r=>r.status === "COMPLETED").length}</h2></div>
+        <div className="card"><small className="muted">Rating pelanggan</small><h2 style={{margin:"6px 0 0"}}>★ {Number(profile?.ratingAverage || 0).toFixed(1)}</h2><small className="muted">{Number(profile?.ratingCount || 0)} penilaian</small></div>
       </section>
+      {reviews.length > 0 && <section className="card" style={{marginTop:22}}>
+        <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+          <div><span className="eyebrow">⭐ Ulasan pelanggan</span><h3 style={{margin:"8px 0 4px"}}>Reputasi layanan Anda</h3><p className="muted" style={{margin:0}}>Rating diperbarui otomatis setelah pelanggan mengirim penilaian.</p></div>
+          <strong style={{fontSize:24}}>★ {Number(profile?.ratingAverage || 0).toFixed(1)} <small className="muted" style={{fontSize:13}}>({Number(profile?.ratingCount || 0)})</small></strong>
+        </div>
+        <div style={{display:"grid",gap:10,marginTop:15}}>
+          {reviews.slice(0,5).map((review:any) => <div key={review.id} style={{padding:"12px 14px",borderRadius:14,background:"var(--surface-2, rgba(99,102,241,.06))"}}>
+            <div style={{display:"flex",justifyContent:"space-between",gap:10}}><b>{review.customerName || "Pelanggan"}</b><span aria-label={`${review.rating} dari 5 bintang`}>★ {review.rating}/5</span></div>
+            {review.comment && <p className="muted" style={{margin:"6px 0 0",fontSize:13}}>{review.comment}</p>}
+          </div>)}
+        </div>
+      </section>}
       <section style={{display:"grid",gap:15,marginTop:22}}>
         {reports.length === 0 ? <div className="card" style={{padding:45,textAlign:"center"}}><Wrench size={35}/><h3>Belum ada pekerjaan</h3><p className="muted">Pekerjaan yang ditugaskan admin akan muncul di sini secara realtime.</p></div> : reports.map(r => <article className="card" key={r.id}>
           <div style={{display:"flex",justifyContent:"space-between",gap:15,alignItems:"start",flexWrap:"wrap"}}><div><b style={{color:"var(--navy)"}}>NYL-{r.id.slice(0,8).toUpperCase()}</b><h3 style={{margin:"7px 0"}}>{r.problemType || "Gangguan listrik"}</h3></div><span className="status-pill status-process">{labels[r.status] || r.status}</span></div>

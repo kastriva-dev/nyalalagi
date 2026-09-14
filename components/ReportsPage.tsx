@@ -81,7 +81,14 @@ export default function ReportsPage() {
     if (!confirming) return;
     try {
       setBusy(true); setError("");
-      await confirmJobByCustomer({ reportId: confirming.id, rating, customerNote });
+      await confirmJobByCustomer({
+        reportId: confirming.id,
+        customerId: user?.uid || "",
+        customerName: user?.displayName || confirming.customerName || "Pelanggan NyalaLagi",
+        technicianId: confirming.technicianId || "",
+        rating,
+        customerNote
+      });
       setConfirming(null); setCustomerNote("");
     } catch (err:any) { setError(err?.message || "Konfirmasi gagal disimpan."); }
     finally { setBusy(false); }
@@ -141,7 +148,7 @@ export default function ReportsPage() {
             })}
           </div>
         }
-      {confirming && <div className="job-modal-backdrop" onClick={()=>!busy && setConfirming(null)}><div className="job-modal customer-confirm" onClick={e=>e.stopPropagation()}><span className="eyebrow"><Star size={15}/> Konfirmasi layanan</span><h2 style={{margin:"12px 0 6px"}}>Nilai pekerjaan teknisi</h2><p className="muted">Pilih rating 1–5 dan tambahkan catatan jika diperlukan.</p><div className="rating-row">{[1,2,3,4,5].map(n=><button key={n} className={n<=rating?"selected":""} onClick={()=>setRating(n)}><Star size={25} fill="currentColor"/></button>)}</div><div className="field"><label>Catatan pelanggan</label><textarea className="textarea" value={customerNote} onChange={e=>setCustomerNote(e.target.value)} placeholder="Contoh: Teknisi cepat dan hasil perbaikan baik."/></div><div style={{display:"flex",gap:10,justifyContent:"flex-end"}}><button className="btn btn-secondary" disabled={busy} onClick={()=>setConfirming(null)}>Batal</button><button className="btn btn-primary" disabled={busy} onClick={confirmJob}>{busy?"Menyimpan...":"Konfirmasi & kirim rating"}</button></div></div></div>}
+      {confirming && <div className="job-modal-backdrop" onClick={()=>!busy && setConfirming(null)}><div className="job-modal customer-confirm" onClick={e=>e.stopPropagation()}><span className="eyebrow"><Star size={15}/> Konfirmasi layanan</span><h2 style={{margin:"12px 0 6px"}}>Nilai pekerjaan teknisi</h2><p className="muted">Pilih rating 1–5 dan tambahkan catatan jika diperlukan.</p><div className="rating-row" role="radiogroup" aria-label="Rating pelayanan teknisi">{[1,2,3,4,5].map(n=><button type="button" key={n} aria-label={`${n} bintang`} aria-checked={n===rating} className={n<=rating?"selected":""} onClick={()=>setRating(n)}><Star size={25} fill="currentColor"/></button>)}</div><div className="field"><label>Catatan pelanggan</label><textarea className="textarea" value={customerNote} onChange={e=>setCustomerNote(e.target.value)} placeholder="Contoh: Teknisi cepat dan hasil perbaikan baik."/></div><div style={{display:"flex",gap:10,justifyContent:"flex-end"}}><button className="btn btn-secondary" disabled={busy} onClick={()=>setConfirming(null)}>Batal</button><button className="btn btn-primary" disabled={busy} onClick={confirmJob}>{busy?"Menyimpan...":"Konfirmasi & kirim rating"}</button></div></div></div>}
       </main>
     </div>
   );

@@ -1,4 +1,4 @@
-import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { collection, doc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "./firebase";
 
@@ -66,16 +66,47 @@ export async function completeJob(params: {
 
 export async function confirmJobByCustomer(params: {
   reportId: string;
+  customerId: string;
+  customerName: string;
+  technicianId: string;
   rating: number;
   customerNote: string;
 }) {
   if (!db) throw new Error("Firebase Firestore belum dikonfigurasi.");
-  if (params.rating < 1 || params.rating > 5) throw new Error("Rating harus 1 sampai 5.");
-  await updateDoc(doc(db, "reports", params.reportId), {
-    customerConfirmed: true,
-    customerConfirmedAt: serverTimestamp(),
-    customerRating: Math.round(params.rating),
-    customerNote: params.customerNote.trim(),
-    updatedAt: serverTimestamp()
+  const roundedRating = Math.round(params.rating);
+  if (roundedRating < 1 || roundedRating > 5) throw new Error("Rating harus 1 sampai 5.");
+  if (!params.technicianId) throw new Error("Teknisi pada laporan tidak ditemukan.");
+
+  const reportRef = doc(db, "reports", params.reportId);
+  const reviewRef = doc(collection(db, "technicianReviews"), params.reportId);
+
+  // Confirmation + review are atomic. The review ID equals the report ID,
+  // which also guarantees one customer review per completed report.
+  await runTransaction(db, async transaction => {
+    const reportSnap = await transaction.get(reportRef);
+    if (!reportSnap.exists()) throw new Error("Laporan tidak ditemukan.");
+    const report = reportSnap.data();
+    if (report.customerId !== params.customerId) throw new Error("Anda tidak memiliki akses ke laporan ini.");
+    if (report.status !== "COMPLETED") throw new Error("Pekerjaan belum selesai.");
+    if (report.customerConfirmed === true) throw new Error("Laporan ini sudah diberi penilaian.");
+    if (report.technicianId !== params.technicianId) throw new Error("Teknisi laporan tidak sesuai.");
+
+    transaction.set(reviewRef, {
+      reportId: params.reportId,
+      customerId: params.customerId,
+      customerName: params.customerName.trim() || "Pelanggan NyalaLagi",
+      technicianId: params.technicianId,
+      rating: roundedRating,
+      comment: params.customerNote.trim(),
+      createdAt: serverTimestamp()
+    });
+
+    transaction.update(reportRef, {
+      customerConfirmed: true,
+      customerConfirmedAt: serverTimestamp(),
+      customerRating: roundedRating,
+      customerNote: params.customerNote.trim(),
+      updatedAt: serverTimestamp()
+    });
   });
 }
