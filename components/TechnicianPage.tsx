@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { ArrowLeft, CheckCircle2, LogOut, MapPin, Navigation, PlayCircle, RefreshCw, ShieldCheck, UserCog, Wrench, XCircle } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { getUserProfile } from "@/lib/user";
@@ -35,6 +35,8 @@ export default function TechnicianPage() {
   const [checking, setChecking] = useState(true);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const watchRef = useRef<number | null>(null);
+  const lastWriteRef = useRef<Record<string, {lat:number;lng:number;at:number}>>({});
 
   useEffect(() => {
     if (!auth) { setError("Firebase belum dikonfigurasi."); setChecking(false); return; }
@@ -56,6 +58,59 @@ export default function TechnicianPage() {
   }, [user]);
 
   const activeReports = useMemo(() => reports.filter(r => !["COMPLETED","REJECTED","CANCELLED"].includes(r.status)), [reports]);
+
+  useEffect(() => {
+    if (!db || !user) return;
+    const onWay = reports.filter(r => r.status === "ENGINEER_ON_WAY");
+    if (!onWay.length || !navigator.geolocation) {
+      if (watchRef.current != null) navigator.geolocation?.clearWatch(watchRef.current);
+      watchRef.current = null;
+      return;
+    }
+
+    const publish = (position: GeolocationPosition) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const now = Date.now();
+      onWay.forEach(r => {
+        const previous = lastWriteRef.current[r.id];
+        const distanceApprox = previous ? Math.hypot((lat - previous.lat) * 111000, (lng - previous.lng) * 111000) : Infinity;
+        if (previous && now - previous.at < 10000 && distanceApprox < 25) return;
+        lastWriteRef.current[r.id] = { lat, lng, at: now };
+        setDoc(doc(db, "reportTracking", r.id), {
+          reportId: r.id,
+          customerId: r.customerId,
+          technicianId: user.uid,
+          latitude: lat,
+          longitude: lng,
+          accuracy: position.coords.accuracy || null,
+          capturedAt: new Date(position.timestamp).toISOString(),
+          updatedAt: serverTimestamp()
+        }, { merge: true }).catch(() => undefined);
+      });
+    };
+
+    if (watchRef.current == null) {
+      watchRef.current = navigator.geolocation.watchPosition(publish, e => {
+        setError(e.code === 1 ? "Izin lokasi ditolak. Aktifkan lokasi agar pelanggan dapat melacak perjalanan." : "GPS belum tersedia. Pastikan lokasi perangkat aktif.");
+      }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
+    }
+
+    return () => {
+      if (watchRef.current != null) navigator.geolocation.clearWatch(watchRef.current);
+      watchRef.current = null;
+    };
+  }, [reports, user]);
+
+  useEffect(() => {
+    if (!db || !user) return;
+    const trackedIds = new Set(reports.filter(r => r.status === "ENGINEER_ON_WAY").map(r => r.id));
+    reports.filter(r => ["ARRIVED","IN_PROGRESS","COMPLETED","REJECTED","CANCELLED"].includes(r.status)).forEach(r => {
+      if (r.technicianId === user.uid) deleteDoc(doc(db, "reportTracking", r.id)).catch(() => undefined);
+      delete lastWriteRef.current[r.id];
+    });
+    Object.keys(lastWriteRef.current).forEach(id => { if (!trackedIds.has(id)) delete lastWriteRef.current[id]; });
+  }, [reports, user]);
 
   async function changeStatus(report: Report, next: ReportStatus) {
     try {

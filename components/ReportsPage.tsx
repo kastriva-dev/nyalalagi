@@ -2,19 +2,22 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Clock3, MapPin, RefreshCw, LogOut } from "lucide-react";
+import { ArrowLeft, Clock3, MapPin, RefreshCw, LogOut, Navigation, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
+import LiveTechnicianMap from "@/components/LiveTechnicianMap";
 
 function statusLabel(status:string) {
   const m:any = {
     SEARCHING_ENGINEER:["Mencari teknisi","status-open"],
     ENGINEER_ASSIGNED:["Teknisi ditemukan","status-process"],
     ENGINEER_ON_WAY:["Teknisi menuju lokasi","status-process"],
+    ARRIVED:["Teknisi sudah tiba","status-process"],
     IN_PROGRESS:["Dalam pengerjaan","status-process"],
+    REJECTED:["Pekerjaan ditolak teknisi","status-open"],
     COMPLETED:["Selesai","status-done"],
     CANCELLED:["Dibatalkan","status-open"]
   };
@@ -78,12 +81,16 @@ export default function ReportsPage() {
                 <div className="timeline">
                   {[
                     ["Laporan dibuat",true],
-                    ["Mencari teknisi",["SEARCHING_ENGINEER","ENGINEER_ASSIGNED","ENGINEER_ON_WAY","IN_PROGRESS","COMPLETED"].includes(r.status)],
-                    ["Teknisi menuju lokasi",["ENGINEER_ON_WAY","IN_PROGRESS","COMPLETED"].includes(r.status)],
+                    ["Mencari teknisi",["SEARCHING_ENGINEER","ENGINEER_ASSIGNED","ENGINEER_ON_WAY","ARRIVED","IN_PROGRESS","COMPLETED"].includes(r.status)],
+                    ["Teknisi menuju lokasi",["ENGINEER_ON_WAY","ARRIVED","IN_PROGRESS","COMPLETED"].includes(r.status)],
+                    ["Teknisi tiba",["ARRIVED","IN_PROGRESS","COMPLETED"].includes(r.status)],
                     ["Pengerjaan",["IN_PROGRESS","COMPLETED"].includes(r.status)],
                     ["Selesai",r.status==="COMPLETED"]
                   ].map(([t,a])=><div className="timeline-item" key={String(t)}><span className={`dot ${a?"active":""}`}/><span>{String(t)}</span></div>)}
                 </div>
+                {r.technicianId && <div className="technician-summary"><div className="tech-avatar"><UserRound size={18}/></div><div style={{flex:1}}><b>{r.technicianName || "Teknisi NyalaLagi"}</b><div className="muted" style={{fontSize:13}}>Teknisi ditugaskan untuk laporan ini{r.technicianPhone ? ` • ${r.technicianPhone}` : ""}</div></div>{r.technicianPhone && <a className="btn btn-secondary" href={`tel:${r.technicianPhone}`}>Hubungi</a>}</div>}
+                {r.status === "ENGINEER_ON_WAY" && r.technicianId && <LiveTechnicianMap reportId={r.id} customerId={user?.uid || ""} destination={r.location ? { latitude: Number(r.location.latitude), longitude: Number(r.location.longitude) } : undefined} />}
+                {r.status === "ENGINEER_ON_WAY" && r.technicianId && <p className="muted" style={{fontSize:12,marginTop:10}}><Navigation size={13} style={{verticalAlign:"middle",marginRight:5}}/> Pelacakan hanya aktif saat teknisi dalam perjalanan dan berhenti otomatis setelah teknisi tiba.</p>}
               </article>
             })}
           </div>

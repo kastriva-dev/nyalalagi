@@ -2185,3 +2185,28 @@ main > #mitra::before {
   .about-highlight > .cms-image-edit-wrap, .about-highlight-image { min-height:300px !important; }
   .about-promise-panel { min-height:0 !important; padding:30px 22px 26px !important; }
 }
+
+
+/* Stage 3 — realtime technician tracking */
+.tracking-card {
+  margin-top:18px; padding:18px; border-radius:20px;
+  background:rgba(246,249,252,.78); border:1px solid rgba(32,25,76,.09);
+}
+.tracking-head { display:flex; justify-content:space-between; gap:15px; align-items:flex-start; }
+.live-dot { display:inline-flex; align-items:center; gap:7px; white-space:nowrap; padding:7px 10px; border-radius:999px; background:#e9fff5; color:#08794d; font-size:11px; font-weight:900; letter-spacing:.04em; }
+.live-dot span { width:7px; height:7px; border-radius:50%; background:#16a36a; box-shadow:0 0 0 5px rgba(22,163,106,.12); animation:tracking-pulse 1.5s infinite; }
+.live-dot.is-stale { background:#fff7df; color:#856300; }
+.live-dot.is-stale span { background:#d9a800; animation:none; }
+.tracking-map { height:330px !important; margin-top:16px; border-radius:16px; overflow:hidden; border:1px solid rgba(32,25,76,.1); }
+.tracking-meta { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:12px; font-size:12px; color:var(--muted); }
+.tracking-meta span { display:inline-flex; align-items:center; gap:5px; }
+.tracking-empty { margin-top:12px; padding:13px 14px; border-radius:12px; background:#fff; color:var(--muted); font-size:13px; }
+.technician-summary { display:flex; align-items:center; gap:12px; margin-top:16px; padding:13px; border-radius:16px; background:rgba(255,255,255,.72); border:1px solid rgba(32,25,76,.08); }
+.tech-avatar { width:38px; height:38px; border-radius:12px; display:grid; place-items:center; background:#fff3b2; color:var(--navy); flex:0 0 auto; }
+@keyframes tracking-pulse { 0%,100% { box-shadow:0 0 0 4px rgba(22,163,106,.12); } 50% { box-shadow:0 0 0 8px rgba(22,163,106,.04); } }
+@media (max-width:560px) {
+  .tracking-card { padding:13px; }
+  .tracking-map { height:270px !important; }
+  .tracking-head { flex-direction:column; }
+  .technician-summary { align-items:flex-start; flex-wrap:wrap; }
+}

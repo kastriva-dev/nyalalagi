@@ -98,7 +98,7 @@ Karena struktur Firebase aplikasi Engineer NyalaLagi yang sudah berjalan belum d
 
 Security Rules sudah menyiapkan pola:
 - customer → laporan miliknya
-- engineer → akses laporan jika custom claim `engineer == true`
+- engineer → akses laporan jika field `users/{uid}.role == "technician"`
 - admin → akses laporan jika custom claim `admin == true`
 
 Jika aplikasi Engineer memakai struktur/claim berbeda, rules harus disesuaikan.

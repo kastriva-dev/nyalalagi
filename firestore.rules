@@ -128,6 +128,33 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+
+    match /reportTracking/{reportId} {
+      allow read: if signedIn() && (
+        isAdmin() ||
+        resource.data.customerId == request.auth.uid ||
+        (isTechnician() && resource.data.technicianId == request.auth.uid)
+      );
+
+      allow create, update: if isTechnician()
+        && request.resource.data.keys().hasOnly([
+          "reportId", "customerId", "technicianId", "latitude", "longitude",
+          "accuracy", "capturedAt", "updatedAt"
+        ])
+        && request.resource.data.reportId == reportId
+        && request.resource.data.technicianId == request.auth.uid
+        && request.resource.data.customerId == get(/databases/$(database)/documents/reports/$(reportId)).data.customerId
+        && get(/databases/$(database)/documents/reports/$(reportId)).data.technicianId == request.auth.uid
+        && request.resource.data.latitude is number
+        && request.resource.data.longitude is number
+        && request.resource.data.latitude >= -90
+        && request.resource.data.latitude <= 90
+        && request.resource.data.longitude >= -180
+        && request.resource.data.longitude <= 180;
+
+      allow delete: if isAdmin() || (isTechnician() && resource.data.technicianId == request.auth.uid);
+    }
+
     match /banks/{bankId} {
       allow read: if signedIn();
       allow write: if isAdmin();
