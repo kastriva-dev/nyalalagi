@@ -1107,3 +1107,280 @@ body { background: var(--ny-bg); color: var(--ny-text); }
 .portfolio-item{min-width:0;}
 @media(max-width:900px){.portfolio-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:560px){.portfolio-grid{grid-template-columns:1fr;}}
+
+/* =========================================================
+   NYALALAGI BLUEPRINT — PREMIUM BLUE / WHITE CORPORATE THEME
+   Inspired by the supplied SkyStructure reference:
+   deep architectural blue, crisp white surfaces, restrained
+   warm accent, editorial typography and connected sections.
+   ========================================================= */
+:root {
+  --ny-blue-950:#061a35;
+  --ny-blue-900:#082652;
+  --ny-blue-800:#0b3470;
+  --ny-blue-700:#124d93;
+  --ny-blue-600:#1975c8;
+  --ny-sky:#eaf4fc;
+  --ny-orange:#ff5b2d;
+  --ny-orange-dark:#e64a22;
+  --ny-ink:#10213a;
+  --ny-muted:#66758a;
+  --ny-line:#dce7f2;
+  --ny-shadow:0 24px 70px rgba(7,35,69,.10);
+}
+
+body { background:#f5f8fc; color:var(--ny-ink); }
+
+/* Hero */
+.dewi-hero {
+  min-height:760px !important;
+  padding:118px 0 88px !important;
+  background:var(--ny-blue-950) !important;
+  isolation:isolate;
+}
+.dewi-hero .hero-backdrop {
+  background-position:center center !important;
+  transform:scale(1.035) !important;
+  filter:saturate(.92) contrast(1.02);
+}
+.dewi-hero::before {
+  background:
+    linear-gradient(180deg,rgba(3,20,43,.72) 0%,rgba(5,30,66,.58) 38%,rgba(4,19,40,.90) 100%) !important;
+}
+.dewi-hero::after {
+  background:
+    radial-gradient(circle at 52% 30%,rgba(38,133,224,.28),transparent 36%),
+    linear-gradient(90deg,rgba(4,20,43,.55),transparent 48%,rgba(4,20,43,.42)) !important;
+}
+.dewi-hero .hero-copy { max-width:980px !important; }
+.dewi-hero .hero-copy .eyebrow {
+  background:rgba(255,255,255,.09) !important;
+  border-color:rgba(157,213,255,.38) !important;
+  color:#fff !important;
+  box-shadow:0 8px 30px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.18);
+}
+.dewi-hero h1 {
+  font-family:Georgia,"Times New Roman",serif !important;
+  font-weight:700 !important;
+  font-size:clamp(45px,6.5vw,80px) !important;
+  line-height:1.02 !important;
+  letter-spacing:-.045em !important;
+  max-width:900px !important;
+  text-shadow:0 14px 42px rgba(0,0,0,.34) !important;
+}
+.dewi-hero .hero-copy .hero-description {
+  width:min(760px,100%) !important;
+  color:#fff !important;
+  opacity:.96 !important;
+  font-size:clamp(15px,1.7vw,18px) !important;
+  line-height:1.75 !important;
+  font-weight:400 !important;
+  text-shadow:0 4px 22px rgba(0,0,0,.72) !important;
+}
+.dewi-hero .hero-buttons { margin-top:34px !important; }
+.dewi-hero .hero-buttons .btn { min-height:52px !important; border-radius:6px !important; }
+.dewi-hero .btn-primary {
+  background:var(--ny-orange) !important;
+  border-color:var(--ny-orange) !important;
+  box-shadow:0 16px 38px rgba(255,91,45,.28) !important;
+}
+.dewi-hero .btn-primary:hover { background:#ff704a !important; border-color:#ff704a !important; }
+.dewi-hero .btn-whatsapp {
+  background:rgba(255,255,255,.08) !important;
+  border-color:rgba(255,255,255,.68) !important;
+  backdrop-filter:blur(10px);
+}
+.dewi-hero .hero-trust-row { margin-top:28px !important; }
+.dewi-hero .hero-trust-row svg { color:#69c5ff !important; }
+
+/* Header: architectural dark-blue navigation */
+.nav { background:rgba(4,19,38,.30) !important; border-bottom:1px solid rgba(255,255,255,.10) !important; }
+.nav .nav-inner { min-height:82px !important; }
+.nav .brand { color:#fff !important; font-size:19px !important; letter-spacing:-.02em; }
+.nav .brand img { border-radius:12px !important; box-shadow:0 8px 24px rgba(0,0,0,.22); }
+.nav .nav-links { color:rgba(255,255,255,.86) !important; gap:25px !important; }
+.nav .nav-links a { font-size:12px !important; font-weight:800 !important; text-transform:none !important; letter-spacing:.01em !important; }
+.nav .nav-links a::after { background:#ff6a3c !important; bottom:-10px !important; }
+.nav .nav-actions .btn { min-height:44px !important; border-radius:7px !important; }
+.nav .nav-actions .btn-secondary { background:rgba(255,255,255,.07) !important; border-color:rgba(255,255,255,.48) !important; color:#fff !important; }
+.nav .nav-actions .btn-primary { background:var(--ny-orange) !important; border-color:var(--ny-orange) !important; color:#fff !important; }
+.nav.nav-scrolled { background:rgba(5,25,49,.95) !important; box-shadow:0 14px 42px rgba(2,17,34,.25) !important; }
+
+/* Shared landing section rhythm */
+main > .section { position:relative; }
+main > #tentang { background:#fff !important; padding-top:96px !important; }
+main > #keunggulan { background:linear-gradient(180deg,#edf5fc 0%,#f8fbfe 100%) !important; }
+main > #layanan { background:#fff !important; }
+main > #portfolio { background:linear-gradient(180deg,#f0f6fc 0%,#e7f0f8 100%) !important; }
+main > #testimonial { background:#fff !important; }
+main > #mitra { background:linear-gradient(180deg,#eaf3fa 0%,#f8fbfe 100%) !important; }
+main > .dark-section { background:linear-gradient(135deg,#061a35 0%,#0b3470 100%) !important; }
+main > .section:not(.dewi-hero) .container { position:relative; z-index:1; }
+
+/* Editorial section titles */
+.center-heading { margin-bottom:48px !important; }
+.center-heading .eyebrow,
+.section-heading-grid .eyebrow {
+  background:#eef6fd !important;
+  color:#1768aa !important;
+  border:1px solid #cfe4f5 !important;
+  border-radius:5px !important;
+  font-size:10px !important;
+  letter-spacing:.14em !important;
+}
+.center-heading h2,
+.section-heading-grid h2 {
+  font-family:Georgia,"Times New Roman",serif !important;
+  color:var(--ny-ink) !important;
+  font-weight:700 !important;
+}
+.center-heading h2 { font-size:clamp(34px,4.5vw,52px) !important; }
+.section-heading-grid { gap:80px !important; }
+.section-heading-grid .muted { color:#66758a !important; }
+
+/* About: large architectural image with clean content panel */
+.about-highlight {
+  margin-top:50px !important;
+  grid-template-columns:minmax(0,1.22fr) minmax(300px,.78fr) !important;
+  border-radius:4px !important;
+  border:1px solid #dce7f2 !important;
+  box-shadow:0 28px 80px rgba(7,35,69,.13) !important;
+  background:#fff !important;
+}
+.about-highlight > .cms-image-edit-wrap { min-height:420px !important; }
+.about-highlight-image { min-height:420px !important; filter:saturate(.92); }
+.about-highlight-copy { padding:54px 38px 24px !important; }
+.about-highlight-copy .mini-label { color:var(--ny-orange) !important; }
+.about-highlight-copy h3 {
+  font-family:Georgia,"Times New Roman",serif !important;
+  font-size:clamp(25px,3vw,38px) !important;
+  line-height:1.16 !important;
+  color:#10213a !important;
+}
+.about-points { padding:0 38px 40px !important; }
+.about-points span { background:#f6f9fc !important; border:1px solid #e0eaf3 !important; border-radius:4px !important; }
+.about-points span svg { color:var(--ny-orange) !important; }
+
+/* Blue accent rail beneath About */
+.about-highlight::after {
+  content:""; position:absolute; left:0; right:0; bottom:0; height:4px;
+  background:linear-gradient(90deg,var(--ny-orange),#2b91d8 48%,#8cccf2);
+}
+.about-highlight { position:relative; }
+
+/* Advantages: white tiles over pale blue field */
+.advantage-card {
+  border-radius:4px !important;
+  border:1px solid #dbe7f2 !important;
+  background:#fff !important;
+  box-shadow:0 16px 42px rgba(7,35,69,.07) !important;
+  padding:28px !important;
+}
+.advantage-card:hover { border-color:#b9d7ed !important; box-shadow:0 24px 55px rgba(7,35,69,.12) !important; }
+.advantage-icon { border-radius:4px !important; background:#eaf4fc !important; color:#1673ba !important; }
+.advantage-card h3 { color:#10213a !important; }
+.advantage-card .muted { color:#6c7b8f !important; }
+
+/* Services: stronger blue image framing */
+.service-card {
+  border-radius:4px !important;
+  border:1px solid #dbe6f0 !important;
+  background:#fff !important;
+  box-shadow:0 18px 52px rgba(7,35,69,.075) !important;
+}
+.service-card:hover { box-shadow:0 28px 70px rgba(7,35,69,.13) !important; }
+.service-image-wrap { height:235px !important; }
+.service-card img { height:235px !important; }
+.service-number { border-radius:4px !important; background:rgba(5,25,49,.84) !important; }
+.service-body { padding:24px !important; }
+.service-body h3 { font-size:18px !important; color:#10213a !important; }
+.text-link { color:var(--ny-orange) !important; }
+
+/* Portfolio becomes the visual showcase */
+.portfolio-grid { gap:18px !important; }
+.portfolio-item {
+  min-height:365px !important;
+  border-radius:4px !important;
+  box-shadow:0 20px 48px rgba(7,35,69,.12) !important;
+  outline:1px solid rgba(255,255,255,.72);
+}
+.portfolio-item img { min-height:365px !important; filter:saturate(.93) contrast(1.02); }
+.portfolio-item:hover img { transform:scale(1.055); }
+.portfolio-overlay {
+  padding:100px 24px 24px !important;
+  background:linear-gradient(transparent,rgba(3,18,38,.96)) !important;
+}
+.portfolio-overlay span { color:#8fd3ff !important; letter-spacing:.18em !important; }
+.portfolio-overlay h3 { font-family:Georgia,"Times New Roman",serif !important; font-size:21px !important; }
+
+/* Testimonials */
+.testimonial-card {
+  border-radius:4px !important;
+  border:1px solid #dce7f2 !important;
+  box-shadow:0 18px 48px rgba(7,35,69,.07) !important;
+}
+.testimonial-card p { color:#4f6074 !important; }
+.testimonial-footer { border-top-color:#e3ebf3 !important; }
+.testimonial-footer b { color:#10213a !important; }
+.quote-mark { color:rgba(18,117,200,.14) !important; }
+
+/* Partner / technician CTA */
+.partner-shell {
+  border-radius:4px !important;
+  padding:48px !important;
+  background:#fff !important;
+  border:1px solid #dce7f2 !important;
+  box-shadow:0 26px 70px rgba(7,35,69,.10) !important;
+}
+.partner-copy h2 { font-family:Georgia,"Times New Roman",serif !important; color:#10213a !important; }
+.partner-benefit { border-radius:4px !important; background:#f7fafd !important; border:1px solid #dce8f2 !important; }
+.partner-benefit > span { color:var(--ny-orange) !important; }
+
+/* Vision */
+.dark-section .eyebrow { background:rgba(255,255,255,.08) !important; color:#a9dcff !important; border-color:rgba(169,220,255,.22) !important; }
+.dark-section h2 { font-family:Georgia,"Times New Roman",serif !important; }
+.dark-glass { border-radius:4px !important; background:rgba(255,255,255,.075) !important; border-color:rgba(255,255,255,.13) !important; }
+
+/* Final CTA: orange accent on a blue architectural page */
+.cta {
+  border-radius:4px !important;
+  background:linear-gradient(135deg,#ff572b 0%,#ff7048 100%) !important;
+  box-shadow:0 26px 70px rgba(255,91,45,.20) !important;
+}
+.cta h2 { font-family:Georgia,"Times New Roman",serif !important; }
+.cta .btn-dark { border-radius:4px !important; background:#071d38 !important; }
+.cta .btn-whatsapp { border-radius:4px !important; }
+
+/* Footer */
+.footer { background:linear-gradient(180deg,#061a35 0%,#041225 100%) !important; }
+.footer-brand { font-family:Georgia,"Times New Roman",serif !important; }
+.footer-column a::before { color:#55b9f2 !important; }
+.footer-newsletter button { background:var(--ny-orange) !important; }
+
+/* Subtle connected section separators */
+main > #keunggulan::before,
+main > #portfolio::before,
+main > #mitra::before {
+  content:""; position:absolute; left:50%; top:0; transform:translateX(-50%);
+  width:min(1180px,calc(100% - 32px)); height:1px; background:#d4e3ef;
+}
+
+/* Mobile */
+@media (max-width:900px) {
+  .dewi-hero { min-height:720px !important; }
+  .nav .nav-inner { min-height:72px !important; }
+  .section-heading-grid { gap:30px !important; }
+  .about-highlight { grid-template-columns:1fr !important; }
+  .about-highlight > .cms-image-edit-wrap,
+  .about-highlight-image { min-height:330px !important; }
+}
+@media (max-width:560px) {
+  .dewi-hero { min-height:700px !important; padding:106px 0 56px !important; }
+  .dewi-hero h1 { font-size:clamp(39px,11vw,56px) !important; }
+  .dewi-hero .hero-copy .hero-description { font-size:14px !important; }
+  .center-heading h2 { font-size:34px !important; }
+  .about-highlight-copy { padding:34px 24px 20px !important; }
+  .about-points { padding:0 24px 28px !important; }
+  .portfolio-item,.portfolio-item img { min-height:310px !important; }
+  .partner-shell { padding:30px 22px !important; }
+}
