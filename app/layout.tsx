@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import PWARegister from "@/components/PWARegister";
+import FCMNotificationProvider from "@/components/FCMNotificationProvider";
 
 export const metadata: Metadata = {
   title: "NyalaLagi — Layanan Perbaikan Kelistrikan",
@@ -24,7 +25,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id">
-      <body><PWARegister />{children}</body>
+      <body><PWARegister /><FCMNotificationProvider />{children}</body>
     </html>
   );
 }

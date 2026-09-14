@@ -229,3 +229,47 @@ The landing page now uses the supplied NyalaLagi work photos for the hero, about
 - Stage 2 — Technician workflow
 - Stage 3 — GPS live tracking
 - Stage 4 — Job evidence & customer confirmation
+- Stage 5 — Firebase Cloud Messaging notification
+
+
+## 10. Stage 5 — Notification
+
+Customer sekarang dapat menerima push notification realtime untuk perubahan status laporan.
+
+Notifikasi utama:
+- Laporan berhasil dikirim
+- Teknisi telah ditugaskan
+- Teknisi sedang menuju lokasi
+- Teknisi telah tiba
+- Pekerjaan sedang dilakukan
+- Pekerjaan selesai
+
+Tambahan status `REJECTED` juga diberi notifikasi agar customer mengetahui jika teknisi tidak dapat melanjutkan pekerjaan.
+
+### Setup Web Push
+
+Di Firebase Console → Project settings → Cloud Messaging → Web configuration, buat/ambil **Web Push certificate key pair**.
+
+Tambahkan public key ke environment variable Vercel:
+
+```env
+NEXT_PUBLIC_FIREBASE_VAPID_KEY=...
+```
+
+### Deploy Cloud Functions
+
+Stage 5 menambahkan folder `functions/` yang menggunakan Firebase Admin SDK. Deploy terpisah dari frontend Vercel:
+
+```bash
+cd functions
+npm install
+cd ..
+firebase login
+firebase deploy --only functions
+```
+
+Cloud Function otomatis memantau collection `reports` dan mengirim notifikasi berdasarkan `status`. Token customer diambil dari `users/{uid}.fcm_token`.
+
+Frontend tetap dapat dideploy ke Vercel seperti biasa.
+
+> Jangan pernah memasukkan service-account private key ke `.env` frontend, GitHub, atau service worker.

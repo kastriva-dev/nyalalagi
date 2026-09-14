@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Clock3, MapPin, RefreshCw, LogOut, Navigation, UserRound, Star, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Clock3, MapPin, RefreshCw, LogOut, Navigation, UserRound, Star, CheckCircle2, Bell, BellOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
@@ -34,6 +34,13 @@ export default function ReportsPage() {
   const [customerNote,setCustomerNote] = useState("");
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState("");
+  const [notificationPermission, setNotificationPermission] = useState<string>("unsupported");
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
 
   useEffect(() => {
     const firebaseAuth = auth;
@@ -53,6 +60,18 @@ export default function ReportsPage() {
       setLoading(false);
     }, () => setLoading(false));
   }, [user]);
+
+  async function enableNotifications() {
+    try {
+      const fn = (window as any).__enableNyalaLagiNotifications;
+      if (!fn) throw new Error("Modul notifikasi belum siap. Muat ulang halaman lalu coba lagi.");
+      const ok = await fn();
+      if (!ok) throw new Error("Notifikasi belum diaktifkan. Izinkan notifikasi pada browser Anda.");
+      setNotificationPermission("granted");
+    } catch (err:any) {
+      setError(err?.message || "Notifikasi gagal diaktifkan.");
+    }
+  }
 
   async function logout() {
     try { if (auth) await signOut(auth); } finally { window.location.href = "/"; }
@@ -74,6 +93,13 @@ export default function ReportsPage() {
         <Link href="/" className="app-brand"><Image src="/company/logo.png" alt="" width={38} height={38}/> NyalaLagi</Link>
         <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
           <Link href="/" className="btn btn-secondary"><ArrowLeft size={16}/> Beranda</Link>
+          {notificationPermission === "granted" ? (
+            <span className="btn btn-secondary" title="Notifikasi aktif"><Bell size={16}/> Notifikasi aktif</span>
+          ) : notificationPermission === "denied" ? (
+            <span className="btn btn-secondary" title="Notifikasi diblokir browser"><BellOff size={16}/> Notifikasi diblokir</span>
+          ) : (
+            <button type="button" className="btn btn-secondary" onClick={enableNotifications}><Bell size={16}/> Aktifkan notifikasi</button>
+          )}
           <button type="button" className="btn btn-primary" onClick={logout}><LogOut size={16}/> Keluar</button>
         </div>
       </div></header>
