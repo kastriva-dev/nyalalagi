@@ -12,6 +12,13 @@
   --line: #e8eaf0;
   --green: #16a36a;
   --blue: #2f70ff;
+  
+  /* Premium Gold Palette */
+  --gold: #d4af37;
+  --gold-light: #f4e4c1;
+  --gold-dark: #b8941f;
+  --gold-metallic: linear-gradient(135deg, #d4af37 0%, #f4e4c1 50%, #d4af37 100%);
+  --gold-shimmer: linear-gradient(90deg, transparent 0%, rgba(212,175,55,.3) 50%, transparent 100%);
 }
 
 * { box-sizing: border-box; }
@@ -35,22 +42,80 @@ h1,h2,h3,p { margin-top:0; }
 h1 { font-size:clamp(42px,6vw,72px); line-height:1.02; letter-spacing:-.045em; }
 h2 { font-size:clamp(30px,4vw,48px); line-height:1.08; letter-spacing:-.035em; }
 .muted { color:var(--muted); line-height:1.8; }
+/* Button components - Premium with Gold Accents */
 .btn {
   display:inline-flex; align-items:center; justify-content:center; gap:9px;
   min-height:48px; padding:0 20px; border-radius:14px; border:1px solid transparent;
-  font-weight:800; transition:.2s ease;
+  font-weight:800; transition:all .3s ease;
+  position: relative;
+  overflow: hidden;
 }
-.btn:hover { transform:translateY(-2px); }
-.btn-primary { background:var(--yellow); color:#18130a; box-shadow:0 12px 28px rgba(255,205,20,.25); }
-.btn-secondary { background:#fff; border-color:#dfe2ea; color:var(--navy); }
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,.2);
+  transform: translate(-50%, -50%);
+  transition: width .5s ease, height .5s ease;
+}
+.btn:hover::before {
+  width: 300px;
+  height: 300px;
+}
+.btn:hover { 
+  transform:translateY(-2px); 
+  box-shadow:0 8px 24px rgba(0,0,0,.15);
+}
+.btn-primary { 
+  background:linear-gradient(135deg, var(--yellow) 0%, var(--yellow-2) 100%); 
+  color:#18130a; 
+  box-shadow:0 12px 28px rgba(255,205,20,.25), 0 0 0 1px rgba(212,175,55,.15);
+  border:1px solid rgba(212,175,55,.2);
+}
+.btn-primary:hover {
+  box-shadow:0 16px 36px rgba(255,205,20,.35), 0 0 30px rgba(212,175,55,.3), 0 0 0 1px rgba(212,175,55,.25);
+}
+.btn-secondary { 
+  background:rgba(255,255,255,.92); 
+  border:1px solid rgba(212,175,55,.15); 
+  color:var(--navy);
+  backdrop-filter:blur(12px) saturate(140%);
+  -webkit-backdrop-filter:blur(12px) saturate(140%);
+  box-shadow:0 4px 16px rgba(0,0,0,.08);
+}
+.btn-secondary:hover {
+  background:rgba(255,255,255,.98);
+  border-color:rgba(212,175,55,.28);
+  box-shadow:0 8px 24px rgba(0,0,0,.12), 0 0 20px rgba(212,175,55,.2);
+}
 .btn-dark { background:var(--navy); color:#fff; }
+/* Navigation - Premium Glassmorphism with Gold */
 .nav {
   position:sticky; top:0; z-index:50;
-  background:rgba(255,255,255,.68);
-  backdrop-filter:blur(22px) saturate(150%);
-  -webkit-backdrop-filter:blur(22px) saturate(150%);
-  border-bottom:1px solid rgba(255,255,255,.72);
-  box-shadow:0 8px 30px rgba(32,25,76,.06);
+  background:rgba(255,255,255,.75);
+  backdrop-filter:blur(24px) saturate(150%);
+  -webkit-backdrop-filter:blur(24px) saturate(150%);
+  border-bottom:1px solid rgba(212,175,55,.12);
+  box-shadow:0 8px 30px rgba(32,25,76,.06), 0 0 20px rgba(212,175,55,.08);
+  transition:all .3s ease;
+}
+.nav::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--gold-shimmer);
+  opacity: 0;
+  transition: opacity .4s ease;
+}
+.nav:hover::after {
+  opacity: 1;
 }
 .nav-inner { min-height:76px; display:flex; align-items:center; justify-content:space-between; gap:20px; }
 .brand { display:flex; align-items:center; gap:10px; font-weight:900; color:var(--navy); font-size:20px; }
@@ -79,28 +144,67 @@ h2 { font-size:clamp(30px,4vw,48px); line-height:1.08; letter-spacing:-.035em; }
 .ps1 { left:0; top:80px; width:45%; height:190px; }
 .ps2 { left:16%; bottom:15px; width:38%; height:180px; }
 .ps3 { right:0; bottom:0; width:34%; height:145px; }
+/* Floating card with glassmorphism and gold accent */
 .floating-card {
   position:absolute; left:0; bottom:55px;
-  background:rgba(255,255,255,.68); padding:16px; border-radius:18px;
-  border:1px solid rgba(255,255,255,.85);
-  box-shadow:0 20px 45px rgba(24,31,56,.14), inset 0 1px 0 rgba(255,255,255,.9);
-  backdrop-filter:blur(18px) saturate(150%);
-  -webkit-backdrop-filter:blur(18px) saturate(150%);
+  background:rgba(255,255,255,.75); 
+  padding:16px; 
+  border-radius:18px;
+  border:1px solid rgba(212,175,55,.25);
+  box-shadow:0 20px 45px rgba(24,31,56,.14), inset 0 1px 0 rgba(255,255,255,.9), 0 0 25px rgba(212,175,55,.15);
+  backdrop-filter:blur(22px) saturate(155%);
+  -webkit-backdrop-filter:blur(22px) saturate(155%);
   display:flex; gap:12px; align-items:center;
+  transition:all .35s ease;
 }
-.iconbox { width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:#fff3a6; }
+.floating-card:hover {
+  transform:translateY(-4px);
+  box-shadow:0 26px 55px rgba(24,31,56,.18), inset 0 1px 0 rgba(255,255,255,.95), 0 0 35px rgba(212,175,55,.25);
+  border-color:rgba(212,175,55,.35);
+}
+.iconbox { 
+  width:42px;
+  height:42px;
+  border-radius:13px;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(135deg, #fff3a6 0%, #ffe680 100%); 
+  box-shadow:0 4px 12px rgba(212,175,55,.2);
+  border:1px solid rgba(212,175,55,.15);
+}
 .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
 .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
+/* Card variants - Enhanced Glassmorphism with Gold Accents */
 .card {
-  background:linear-gradient(145deg,rgba(255,255,255,.82),rgba(255,255,255,.58));
-  border:1px solid rgba(255,255,255,.82);
+  background:linear-gradient(145deg,rgba(255,255,255,.88),rgba(255,255,255,.72));
+  border:1px solid rgba(212,175,55,.15);
   border-radius:24px; padding:24px;
-  box-shadow:0 18px 50px rgba(30,30,50,.07), inset 0 1px 0 rgba(255,255,255,.8);
-  backdrop-filter:blur(18px) saturate(140%);
-  -webkit-backdrop-filter:blur(18px) saturate(140%);
+  box-shadow:0 18px 50px rgba(30,30,50,.065), inset 0 1px 0 rgba(255,255,255,.85), 0 0 0 1px rgba(212,175,55,.08);
+  backdrop-filter:blur(20px) saturate(145%);
+  -webkit-backdrop-filter:blur(20px) saturate(145%);
   transition:transform .35s ease, box-shadow .35s ease, border-color .35s ease;
+  position: relative;
+  overflow: hidden;
 }
-.card:hover { transform:translateY(-6px); box-shadow:0 26px 65px rgba(30,30,50,.11), inset 0 1px 0 rgba(255,255,255,.9); border-color:rgba(90,69,214,.18); }
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: var(--gold-shimmer);
+  transition: left .6s ease;
+  pointer-events: none;
+}
+.card:hover::before {
+  left: 100%;
+}
+.card:hover { 
+  transform:translateY(-6px); 
+  box-shadow:0 26px 65px rgba(30,30,50,.11), inset 0 1px 0 rgba(255,255,255,.9), 0 0 30px rgba(212,175,55,.2), 0 0 0 1px rgba(212,175,55,.22); 
+  border-color:rgba(212,175,55,.28);
+}
 .feature-card h3 { margin:14px 0 8px; }
 .service-card { overflow:hidden; padding:0; }
 .service-card img { width:100%; height:220px; object-fit:cover; display:block; }
@@ -144,10 +248,78 @@ h2 { font-size:clamp(30px,4vw,48px); line-height:1.08; letter-spacing:-.035em; }
 .footer-column a::before { content:'›'; position:absolute; left:0; color:#1eb7f2; font-size:20px; line-height:13px; }
 .footer-column a:hover { color:#fff; }
 .footer-newsletter p { color:#c1cbd3; font-size:13px; line-height:1.65; margin:0 0 26px; max-width:360px; }
-.newsletter-form { display:flex; height:39px; }
-.newsletter-form input { min-width:0; flex:1; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.11); border-right:0; color:#fff; padding:0 12px; outline:none; backdrop-filter:blur(10px); }
-.newsletter-form button { border:1px solid rgba(255,255,255,.08); background:linear-gradient(135deg,#276ca8,#3185c9); color:#fff; font-weight:700; padding:0 18px; cursor:pointer; transition:filter .2s, transform .2s; }
-.newsletter-form button:hover { filter:brightness(1.12); transform:translateY(-1px); }
+/* Newsletter form - Premium Glassmorphism with Gold */
+.newsletter-form { 
+  display:flex; 
+  height:39px;
+  position: relative;
+}
+.newsletter-form::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 8px;
+  padding: 1px;
+  background: var(--gold-metallic);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity .4s ease;
+}
+.newsletter-form:hover::before {
+  opacity: 0.6;
+}
+.newsletter-form input { 
+  min-width:0; 
+  flex:1; 
+  background:rgba(255,255,255,.055); 
+  border:1px solid rgba(212,175,55,.18); 
+  border-right:0; 
+  color:#fff; 
+  padding:0 12px; 
+  outline:none; 
+  backdrop-filter:blur(14px) saturate(140%);
+  -webkit-backdrop-filter:blur(14px) saturate(140%);
+  transition:all .3s ease;
+}
+.newsletter-form input:focus {
+  background:rgba(255,255,255,.08);
+  border-color:rgba(212,175,55,.35);
+}
+.newsletter-form button { 
+  border:1px solid rgba(212,175,55,.25); 
+  background:linear-gradient(135deg,#276ca8,#3185c9); 
+  color:#fff; 
+  font-weight:700; 
+  padding:0 18px; 
+  cursor:pointer; 
+  transition:all .3s ease;
+  box-shadow:0 4px 12px rgba(212,175,55,.15);
+  position: relative;
+  overflow: hidden;
+}
+.newsletter-form button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(212,175,55,.3);
+  transform: translate(-50%, -50%);
+  transition: width .5s ease, height .5s ease;
+}
+.newsletter-form button:hover::before {
+  width: 200px;
+  height: 200px;
+}
+.newsletter-form button:hover { 
+  filter:brightness(1.1); 
+  transform:translateY(-1px);
+  box-shadow:0 6px 18px rgba(212,175,55,.25);
+}
 .footer-socials { display:flex; gap:10px; margin-top:20px; }
 .footer-socials a { width:36px; height:36px; border:1px solid rgba(255,255,255,.15); border-radius:50%; display:grid; place-items:center; color:#cbd6dd; background:rgba(255,255,255,.035); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); transition:transform .25s ease, border-color .25s ease, color .25s ease, background .25s ease; }
 .footer-socials a:hover { transform:translateY(-3px); border-color:#24baf2; color:#24baf2; background:rgba(36,186,242,.08); }
@@ -246,7 +418,35 @@ html { scroll-behavior:smooth; }
 .hero-trust-row svg { color:#5a45d6; }
 .btn-whatsapp { background:linear-gradient(135deg,#17b968,#0c9b55); color:#fff; border-color:transparent; box-shadow:0 12px 28px rgba(14,166,91,.2); }
 .btn-whatsapp:hover { color:#fff; transform:translateY(-2px); filter:brightness(1.06); }
-.glass-card { background:linear-gradient(145deg,rgba(255,255,255,.78),rgba(255,255,255,.48)); backdrop-filter:blur(22px) saturate(150%); -webkit-backdrop-filter:blur(22px) saturate(150%); }
+/* Glass card - Premium with Gold Accents */
+.glass-card { 
+  background:linear-gradient(145deg,rgba(255,255,255,.82),rgba(255,255,255,.58)); 
+  backdrop-filter:blur(24px) saturate(155%); 
+  -webkit-backdrop-filter:blur(24px) saturate(155%);
+  border:1px solid rgba(212,175,55,.12);
+  box-shadow:0 12px 36px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.85), 0 0 20px rgba(212,175,55,.08);
+  position: relative;
+  overflow: hidden;
+  transition:all .35s ease;
+}
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: var(--gold-shimmer);
+  transition: left .6s ease;
+  pointer-events: none;
+}
+.glass-card:hover::before {
+  left: 100%;
+}
+.glass-card:hover {
+  border-color:rgba(212,175,55,.25);
+  box-shadow:0 16px 45px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.9), 0 0 30px rgba(212,175,55,.15);
+}
 .about-highlight { margin-top:34px; display:flex; justify-content:space-between; gap:30px; align-items:flex-start; padding:30px; }
 .mini-label { font-size:10px; letter-spacing:.16em; font-weight:900; color:#5a45d6; }
 .about-highlight h3 { margin:9px 0 0; max-width:580px; font-size:24px; }
@@ -282,17 +482,107 @@ html { scroll-behavior:smooth; }
 .partner-benefit b { font-size:14px; }
 .partner-benefit p { font-size:12px; line-height:1.6; margin:6px 0 0; }
 .dark-glass { background:rgba(255,255,255,.065) !important; border-color:rgba(255,255,255,.13) !important; }
-.glass-cta { border:1px solid rgba(255,255,255,.8); box-shadow:0 24px 70px rgba(27,35,63,.12), inset 0 1px 0 rgba(255,255,255,.8); }
+/* Glass CTA - Premium with Gold Border */
+.glass-cta { 
+  border:1px solid rgba(212,175,55,.35); 
+  box-shadow:0 24px 70px rgba(27,35,63,.12), inset 0 1px 0 rgba(255,255,255,.8), 0 0 30px rgba(212,175,55,.15);
+  backdrop-filter:blur(20px) saturate(150%);
+  -webkit-backdrop-filter:blur(20px) saturate(150%);
+  position: relative;
+  overflow: hidden;
+  transition:all .35s ease;
+}
+.glass-cta::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gold-metallic);
+  opacity: 0;
+  transition: opacity .4s ease;
+}
+.glass-cta:hover::after {
+  opacity: 1;
+}
+.glass-cta:hover {
+  border-color:rgba(212,175,55,.5);
+  box-shadow:0 28px 80px rgba(27,35,63,.16), inset 0 1px 0 rgba(255,255,255,.9), 0 0 40px rgba(212,175,55,.25);
+}
 
-/* Authentication */
-.auth-shell { min-height:100vh; display:grid; place-items:center; padding:35px 18px; position:relative; overflow:hidden; background:radial-gradient(circle at 15% 15%,rgba(30,183,242,.12),transparent 30%),radial-gradient(circle at 85% 80%,rgba(90,69,214,.15),transparent 35%),#f3f5fa; }
-.auth-glow { position:absolute; width:300px; height:300px; border-radius:50%; filter:blur(65px); pointer-events:none; }
-.auth-glow-one { background:rgba(30,183,242,.12); left:-100px; top:10%; }
-.auth-glow-two { background:rgba(90,69,214,.13); right:-100px; bottom:5%; }
-.auth-card { width:min(100%,520px); padding:30px; border-radius:30px; position:relative; z-index:1; box-shadow:0 30px 90px rgba(31,39,70,.13); }
+/* Authentication - Premium Glassmorphism with Gold */
+.auth-shell { 
+  min-height:100vh; 
+  display:grid; 
+  place-items:center; 
+  padding:35px 18px; 
+  position:relative; 
+  overflow:hidden; 
+  background:radial-gradient(circle at 15% 15%,rgba(212,175,55,.08),transparent 30%),radial-gradient(circle at 85% 80%,rgba(90,69,214,.12),transparent 35%),#f3f5fa;
+}
+.auth-glow { 
+  position:absolute; 
+  width:300px; 
+  height:300px; 
+  border-radius:50%; 
+  filter:blur(65px); 
+  pointer-events:none;
+  opacity: 0.8;
+}
+.auth-glow-one { 
+  background:rgba(212,175,55,.15); 
+  left:-100px; 
+  top:10%;
+  animation: glowPulse 6s ease-in-out infinite;
+}
+.auth-glow-two { 
+  background:rgba(90,69,214,.13); 
+  right:-100px; 
+  bottom:5%;
+  animation: glowPulse 6s ease-in-out 3s infinite;
+}
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+.auth-card { 
+  width:min(100%,520px); 
+  padding:30px; 
+  border-radius:30px; 
+  position:relative; 
+  z-index:1; 
+  background:rgba(255,255,255,.94); 
+  border:1px solid rgba(212,175,55,.20); 
+  box-shadow:0 30px 90px rgba(31,39,70,.13), inset 0 1px 0 rgba(255,255,255,.95), 0 0 40px rgba(212,175,55,.15);
+  backdrop-filter:blur(22px) saturate(155%);
+  -webkit-backdrop-filter:blur(22px) saturate(155%);
+  overflow: hidden;
+}
+.auth-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(212,175,55,.06) 0%, transparent 70%);
+  animation: authGlow 8s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes authGlow {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(-10%, -10%) rotate(180deg); }
+}
 .auth-back { display:inline-flex; align-items:center; gap:6px; color:#697083; font-size:13px; font-weight:800; margin-bottom:25px; }
 .auth-brand { display:flex; align-items:center; gap:13px; }
-.auth-brand img { border-radius:16px; box-shadow:0 12px 30px rgba(90,69,214,.15); }
+.auth-brand img { 
+  border-radius:16px; 
+  box-shadow:0 12px 30px rgba(212,175,55,.20), 0 0 20px rgba(212,175,55,.1);
+  border:1px solid rgba(212,175,55,.15);
+  position: relative;
+  z-index: 1;
+}
 .auth-brand b { display:block; font-size:22px; }
 .auth-brand span { display:block; color:#81879a; font-size:11px; margin-top:2px; }
 .auth-heading { margin:30px 0 22px; }
@@ -300,10 +590,57 @@ html { scroll-behavior:smooth; }
 .input-with-icon { position:relative; }
 .input-with-icon > svg { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#8a90a1; z-index:2; }
 .input-with-icon .input { padding-left:43px; }
-.auth-alert { border-radius:14px; padding:12px 14px; font-size:13px; margin:12px 0; }
-.auth-alert.error { background:#fff0f0; color:#a32626; border:1px solid #ffd5d5; }
-.auth-alert.success { background:#ecfff5; color:#08734a; border:1px solid #c7f2dc; }
-.auth-submit { width:100%; justify-content:center; margin-top:5px; }
+.auth-alert { 
+  border-radius:14px; 
+  padding:12px 14px; 
+  font-size:13px; 
+  margin:12px 0;
+  position: relative;
+  z-index: 1;
+}
+.auth-alert.error { 
+  background:rgba(255,240,240,.95); 
+  color:#a32626; 
+  border:1px solid rgba(255,213,213,.8);
+  box-shadow:0 4px 12px rgba(163,38,38,.08);
+}
+.auth-alert.success { 
+  background:rgba(236,255,245,.95); 
+  color:#08734a; 
+  border:1px solid rgba(199,242,220,.8);
+  box-shadow:0 4px 12px rgba(8,115,74,.08);
+}
+.auth-submit { 
+  width:100%; 
+  justify-content:center; 
+  margin-top:5px;
+  background:linear-gradient(135deg, var(--yellow) 0%, var(--yellow-2) 100%);
+  border:1px solid rgba(212,175,55,.2);
+  box-shadow:0 8px 24px rgba(255,205,20,.3), 0 0 0 1px rgba(212,175,55,.15);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+.auth-submit::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,.3);
+  transform: translate(-50%, -50%);
+  transition: width .5s ease, height .5s ease;
+}
+.auth-submit:hover::before {
+  width: 400px;
+  height: 400px;
+}
+.auth-submit:hover {
+  box-shadow:0 12px 32px rgba(255,205,20,.4), 0 0 30px rgba(212,175,55,.3), 0 0 0 1px rgba(212,175,55,.25);
+  transform:translateY(-2px);
+}
 .auth-links { display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap; margin:18px 0 22px; font-size:12px; color:#7a8193; }
 .auth-links button { border:0; background:none; padding:0; color:#4d3bc5; font:inherit; font-weight:800; cursor:pointer; }
 .security-note { display:flex; gap:10px; padding:14px; border-radius:16px; background:rgba(90,69,214,.055); border:1px solid rgba(90,69,214,.1); color:#5e6475; }
@@ -909,15 +1246,30 @@ body { background: var(--ny-bg); color: var(--ny-text); }
 .section { padding:104px 0; position:relative; }
 .section-soft { background:linear-gradient(180deg,#f8fafc 0%,#eef3f7 100%) !important; }
 
-/* Navbar */
+/* Navbar - Premium Glassmorphism with Gold Accent */
 .nav {
   position:fixed !important; top:0; left:0; right:0;
-  background:rgba(8,22,35,.20) !important;
-  border-bottom:1px solid rgba(255,255,255,.12) !important;
-  box-shadow:none !important;
-  backdrop-filter:blur(16px) saturate(145%);
-  -webkit-backdrop-filter:blur(16px) saturate(145%);
+  background:rgba(8,22,35,.18) !important;
+  border-bottom:1px solid rgba(212,175,55,.15) !important;
+  box-shadow:0 2px 20px rgba(0,0,0,.06), 0 8px 32px rgba(212,175,55,.08) !important;
+  backdrop-filter:blur(24px) saturate(150%);
+  -webkit-backdrop-filter:blur(24px) saturate(150%);
   transition:background .3s ease, box-shadow .3s ease, border-color .3s ease;
+  position: relative;
+}
+.nav::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--gold-shimmer);
+  opacity: 0;
+  transition: opacity .4s ease;
+}
+.nav:hover::after {
+  opacity: 1;
 }
 .nav .nav-inner { min-height:82px; }
 .nav .brand { color:#fff !important; font-size:19px; letter-spacing:-.02em; }
@@ -996,40 +1348,223 @@ body { background: var(--ny-bg); color: var(--ny-text); }
 .about-points span { background:#f7f9fb; border:1px solid #e8edf1; border-radius:13px; padding:11px 13px; color:#394550; justify-content:flex-start; }
 .about-points span svg { color:var(--ny-orange); }
 
-/* Advantage cards */
+/* Advantage cards - Premium Glassmorphism with Gold */
 .grid-4 { gap:16px; }
-.advantage-card { padding:25px !important; border-radius:20px !important; background:#fff !important; border:1px solid #e8edf1 !important; box-shadow:0 15px 45px rgba(16,35,52,.055) !important; }
-.advantage-card:hover { transform:translateY(-7px); border-color:#ffd6ca !important; box-shadow:0 25px 55px rgba(16,35,52,.10) !important; }
-.advantage-icon { width:46px; height:46px; border-radius:14px; display:grid; place-items:center; background:#fff1ec; color:var(--ny-orange); }
-.advantage-card h3 { margin:17px 0 8px; color:var(--ny-navy); font-size:17px; }
-.advantage-card .muted { font-size:12px; line-height:1.75; }
+.advantage-card { 
+  padding:25px !important; 
+  border-radius:20px !important; 
+  background:rgba(255,255,255,.92) !important; 
+  border:1px solid rgba(212,175,55,.12) !important; 
+  box-shadow:0 15px 45px rgba(16,35,52,.055), 0 0 0 1px rgba(212,175,55,.06) !important;
+  backdrop-filter:blur(18px) saturate(145%);
+  -webkit-backdrop-filter:blur(18px) saturate(145%);
+  position: relative;
+  overflow: hidden;
+  transition:all .35s ease !important;
+}
+.advantage-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(212,175,55,.08) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity .4s ease;
+}
+.advantage-card:hover::before {
+  opacity: 1;
+}
+.advantage-card:hover { 
+  transform:translateY(-7px); 
+  border-color:rgba(212,175,55,.28) !important; 
+  box-shadow:0 25px 55px rgba(16,35,52,.10), 0 0 30px rgba(212,175,55,.2), 0 0 0 1px rgba(212,175,55,.18) !important;
+  background:rgba(255,255,255,.96) !important;
+}
+.advantage-icon { 
+  width:46px; 
+  height:46px; 
+  border-radius:14px; 
+  display:grid; 
+  place-items:center; 
+  background:linear-gradient(135deg, #fff1ec 0%, #ffe8dc 100%); 
+  color:var(--ny-orange);
+  border:1px solid rgba(212,175,55,.15);
+  box-shadow:0 4px 12px rgba(212,175,55,.12);
+  position: relative;
+  z-index: 1;
+}
+.advantage-card h3 { margin:12px 0 7px; position: relative; z-index: 1; }
+.advantage-card .muted { font-size:12px; line-height:1.75; position: relative; z-index: 1; }
 
-/* Services */
+/* Services - Premium Glassmorphism with Gold */
 .service-grid { gap:18px; }
-.service-card { background:#fff !important; border:1px solid #e7edf1 !important; border-radius:21px !important; box-shadow:0 18px 48px rgba(16,35,52,.06) !important; }
-.service-card:hover { transform:translateY(-7px); box-shadow:0 28px 65px rgba(16,35,52,.12) !important; }
-.service-image-wrap { height:220px; }
+.service-card { 
+  background:rgba(255,255,255,.90) !important; 
+  border:1px solid rgba(212,175,55,.14) !important; 
+  border-radius:21px !important; 
+  box-shadow:0 18px 48px rgba(16,35,52,.06), 0 0 0 1px rgba(212,175,55,.08) !important;
+  backdrop-filter:blur(16px) saturate(140%);
+  -webkit-backdrop-filter:blur(16px) saturate(140%);
+  overflow: hidden;
+  position: relative;
+  transition:all .35s ease !important;
+}
+.service-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gold-metallic);
+  opacity: 0;
+  transition: opacity .4s ease;
+}
+.service-card:hover::after {
+  opacity: 1;
+}
+.service-card:hover { 
+  transform:translateY(-7px); 
+  box-shadow:0 28px 65px rgba(16,35,52,.12), 0 0 40px rgba(212,175,55,.18), 0 0 0 1px rgba(212,175,55,.22) !important;
+}
+.service-image-wrap { 
+  height:220px; 
+  position: relative;
+  overflow: hidden;
+}
+.service-image-wrap::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(212,175,55,.08) 100%);
+  z-index: 1;
+  opacity: 0;
+  transition: opacity .4s ease;
+}
+.service-card:hover .service-image-wrap::before {
+  opacity: 1;
+}
 .service-card img { height:220px !important; }
-.service-number { background:rgba(7,23,36,.82); border:1px solid rgba(255,255,255,.25); border-radius:9px; }
+.service-number { 
+  background:rgba(11,27,43,.88); 
+  border:1px solid rgba(212,175,55,.35); 
+  border-radius:9px;
+  box-shadow:0 4px 12px rgba(212,175,55,.2);
+}
 .service-body { padding:23px !important; }
 .service-body h3 { color:var(--ny-navy); font-size:17px; margin-bottom:8px; }
 .service-body .muted { font-size:12px; line-height:1.75; min-height:62px; }
 .text-link { color:var(--ny-orange); font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
 
-/* Portfolio */
+/* Portfolio - Premium Glassmorphism with Gold */
 .portfolio-grid { grid-template-columns:repeat(3,1fr) !important; gap:18px !important; }
-.portfolio-item { min-height:360px !important; border-radius:22px !important; box-shadow:0 18px 50px rgba(16,35,52,.09) !important; border:0 !important; }
-.portfolio-item img { min-height:360px !important; }
-.portfolio-overlay { padding:85px 22px 22px !important; background:linear-gradient(transparent,rgba(5,16,26,.94)) !important; }
-.portfolio-overlay span { color:#ffb19e; font-weight:800; }
-.portfolio-overlay h3 { font-size:19px !important; }
+.portfolio-item { 
+  min-height:360px !important; 
+  border-radius:22px !important; 
+  box-shadow:0 18px 50px rgba(16,35,52,.09), 0 0 0 1px rgba(212,175,55,.10) !important; 
+  border:1px solid rgba(212,175,55,.08) !important;
+  position: relative;
+  overflow: hidden;
+  transition:all .4s ease !important;
+}
+.portfolio-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(212,175,55,.05) 0%, transparent 50%, rgba(212,175,55,.08) 100%);
+  opacity: 0;
+  z-index: 2;
+  transition: opacity .4s ease;
+}
+.portfolio-item:hover::before {
+  opacity: 1;
+}
+.portfolio-item:hover {
+  box-shadow:0 28px 70px rgba(16,35,52,.14), 0 0 50px rgba(212,175,55,.25), 0 0 0 1px rgba(212,175,55,.20) !important;
+  border-color:rgba(212,175,55,.22) !important;
+}
+.portfolio-item img { 
+  min-height:360px !important;
+  transition:transform .5s ease, filter .4s ease;
+  filter:saturate(.93) contrast(1.02);
+}
+.portfolio-item:hover img {
+  transform:scale(1.055);
+  filter:saturate(1.05) contrast(1.05);
+}
+.portfolio-overlay { 
+  padding:85px 22px 22px !important; 
+  background:linear-gradient(transparent,rgba(5,16,26,.94)) !important;
+  position: relative;
+  z-index: 3;
+}
+.portfolio-overlay span { 
+  color:#ffb19e; 
+  font-weight:800;
+  text-shadow:0 2px 8px rgba(212,175,55,.3);
+}
+.portfolio-overlay h3 { 
+  font-size:19px !important;
+  text-shadow:0 2px 12px rgba(0,0,0,.4);
+}
 
-/* Testimonials */
+/* Testimonials - Premium Glassmorphism with Gold */
 .testimonial-grid { gap:18px; }
-.testimonial-card { min-height:255px; padding:26px !important; background:#fff !important; border:1px solid #e8edf1 !important; border-radius:20px !important; box-shadow:0 16px 48px rgba(16,35,52,.06) !important; }
-.testimonial-card p { font-size:14px !important; line-height:1.85 !important; color:#4d5862; }
-.quote-mark { color:rgba(255,98,56,.15); }
-.testimonial-footer b { color:var(--ny-navy); }
+.testimonial-card { 
+  min-height:255px; 
+  padding:26px !important; 
+  background:rgba(255,255,255,.90) !important; 
+  border:1px solid rgba(212,175,55,.12) !important; 
+  border-radius:20px !important; 
+  box-shadow:0 16px 48px rgba(16,35,52,.06), 0 0 0 1px rgba(212,175,55,.08) !important;
+  backdrop-filter:blur(18px) saturate(145%);
+  -webkit-backdrop-filter:blur(18px) saturate(145%);
+  position: relative;
+  overflow: hidden;
+  transition:all .35s ease !important;
+}
+.testimonial-card::before {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(212,175,55,.12) 0%, transparent 100%);
+  transition: top .5s ease;
+}
+.testimonial-card:hover::before {
+  top: 0;
+}
+.testimonial-card:hover {
+  transform:translateY(-6px);
+  border-color:rgba(212,175,55,.25) !important;
+  box-shadow:0 24px 60px rgba(16,35,52,.10), 0 0 35px rgba(212,175,55,.2), 0 0 0 1px rgba(212,175,55,.18) !important;
+}
+.testimonial-card p { 
+  font-size:14px !important; 
+  line-height:1.85 !important; 
+  color:#4d5862;
+  position: relative;
+  z-index: 1;
+}
+.quote-mark { 
+  color:rgba(212,175,55,.25);
+  text-shadow:0 2px 8px rgba(212,175,55,.15);
+}
+.testimonial-footer b { 
+  color:var(--ny-navy);
+  position: relative;
+  z-index: 1;
+}
 
 /* Partner */
 .partner-section { background:linear-gradient(135deg,#edf5fa,#f7f8fb) !important; }
@@ -1045,22 +1580,150 @@ body { background: var(--ny-bg); color: var(--ny-text); }
 .dark-section::before { content:""; position:absolute; width:500px; height:500px; border-radius:50%; background:rgba(53,184,239,.10); filter:blur(70px); right:-170px; top:-250px; }
 .dark-section .container { position:relative; z-index:1; }
 .dark-section h2 { color:#fff; }
-.dark-glass { border:1px solid rgba(255,255,255,.12) !important; background:rgba(255,255,255,.055) !important; border-radius:20px !important; }
-.dark-glass h3 { color:#fff; }
-.dark-glass .muted { color:#b9c9d4; }
+/* Dark glass - Premium with Gold Accents */
+.dark-glass { 
+  border:1px solid rgba(212,175,55,.18) !important; 
+  background:rgba(255,255,255,.065) !important; 
+  border-radius:20px !important;
+  backdrop-filter:blur(18px) saturate(145%);
+  -webkit-backdrop-filter:blur(18px) saturate(145%);
+  box-shadow:0 12px 36px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.1), 0 0 25px rgba(212,175,55,.1);
+  position: relative;
+  overflow: hidden;
+  transition:all .35s ease;
+}
+.dark-glass::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: var(--gold-shimmer);
+  transition: left .6s ease;
+  pointer-events: none;
+}
+.dark-glass:hover::before {
+  left: 100%;
+}
+.dark-glass:hover {
+  border-color:rgba(212,175,55,.3) !important;
+  box-shadow:0 16px 45px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.15), 0 0 35px rgba(212,175,55,.18);
+}
+.dark-glass h3 { 
+  color:#fff;
+  position: relative;
+  z-index: 1;
+}
+.dark-glass .muted { 
+  color:#b9c9d4;
+  position: relative;
+  z-index: 1;
+}
 
 /* CTA */
-.cta { position:relative; overflow:hidden; padding:42px 46px !important; border-radius:25px !important; background:linear-gradient(135deg,#ff6238,#ff7b54) !important; color:#fff; box-shadow:0 25px 65px rgba(255,98,56,.20); }
-.cta::after { content:""; position:absolute; width:330px; height:330px; border-radius:50%; right:-120px; top:-170px; background:rgba(255,255,255,.12); }
+/* CTA - Premium Glassmorphism with Gold Gradient */
+.cta { 
+  position:relative; 
+  overflow:hidden; 
+  padding:42px 46px !important; 
+  border-radius:25px !important; 
+  background:linear-gradient(135deg,#ff6238,#ff7b54) !important; 
+  color:#fff; 
+  box-shadow:0 25px 65px rgba(255,98,56,.20), 0 0 0 1px rgba(212,175,55,.15);
+  border:1px solid rgba(212,175,55,.2);
+}
+.cta::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: var(--gold-shimmer);
+  animation: shimmerCTA 3s ease-in-out infinite;
+  z-index: 0;
+}
+@keyframes shimmerCTA {
+  0%, 100% { left: -100%; }
+  50% { left: 100%; }
+}
+.cta::after { 
+  content:""; 
+  position:absolute; 
+  width:330px; 
+  height:330px; 
+  border-radius:50%; 
+  right:-120px; 
+  top:-170px; 
+  background:rgba(255,255,255,.12);
+  box-shadow:0 0 80px rgba(212,175,55,.15);
+}
 .cta > * { position:relative; z-index:1; }
-.cta .eyebrow { background:rgba(255,255,255,.12); color:#fff; border-color:rgba(255,255,255,.25); }
+.cta .eyebrow { 
+  background:rgba(255,255,255,.12); 
+  color:#fff; 
+  border-color:rgba(255,255,255,.25);
+  box-shadow:0 4px 12px rgba(212,175,55,.2);
+}
 .cta h2 { color:#fff; }
 .cta p { color:rgba(255,255,255,.88); }
 .cta .btn-dark { background:#081a29; }
 
-/* Footer */
-.footer { background:#06131e !important; }
-.footer-brand { color:#fff; }
+/* Footer - Premium Dark Glassmorphism with Gold Accents */
+.footer { 
+  background:linear-gradient(180deg,#06131e 0%,#030a12 100%) !important;
+  position: relative;
+  overflow: hidden;
+}
+.footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--gold-metallic);
+  opacity: 0.3;
+}
+.footer::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(212,175,55,.04) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.footer-brand { 
+  color:#fff;
+  text-shadow:0 2px 8px rgba(212,175,55,.2);
+  position: relative;
+  z-index: 1;
+}
+.footer-column a {
+  position: relative;
+  z-index: 1;
+  transition: color .3s ease;
+}
+.footer-column a:hover {
+  color: var(--gold-light);
+}
+.footer-newsletter {
+  position: relative;
+  z-index: 1;
+}
+.footer-newsletter button {
+  background:var(--ny-orange) !important;
+  box-shadow:0 4px 16px rgba(212,175,55,.25);
+  transition:all .3s ease;
+}
+.footer-newsletter button:hover {
+  box-shadow:0 6px 24px rgba(212,175,55,.35);
+  transform:translateY(-2px);
+}
 
 /* Mobile polish */
 @media (max-width:1000px) {
@@ -1155,9 +1818,11 @@ body { background:#f5f8fc; color:var(--ny-ink); }
 .dewi-hero .hero-copy { max-width:980px !important; }
 .dewi-hero .hero-copy .eyebrow {
   background:rgba(255,255,255,.09) !important;
-  border-color:rgba(157,213,255,.38) !important;
+  border:1px solid rgba(212,175,55,.35) !important;
   color:#fff !important;
-  box-shadow:0 8px 30px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.18);
+  box-shadow:0 8px 30px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.18), 0 0 20px rgba(212,175,55,.2);
+  backdrop-filter:blur(12px) saturate(140%);
+  -webkit-backdrop-filter:blur(12px) saturate(140%);
 }
 .dewi-hero h1 {
   font-family:Georgia,"Times New Roman",serif !important;
@@ -1217,16 +1882,27 @@ main > #mitra { background:linear-gradient(180deg,#eaf3fa 0%,#f8fbfe 100%) !impo
 main > .dark-section { background:linear-gradient(135deg,#061a35 0%,#0b3470 100%) !important; }
 main > .section:not(.dewi-hero) .container { position:relative; z-index:1; }
 
-/* Editorial section titles */
+/* Editorial section titles - Premium Glassmorphism with Gold */
 .center-heading { margin-bottom:48px !important; }
 .center-heading .eyebrow,
 .section-heading-grid .eyebrow {
-  background:#eef6fd !important;
+  background:rgba(238,246,253,.95) !important;
   color:#1768aa !important;
-  border:1px solid #cfe4f5 !important;
+  border:1px solid rgba(212,175,55,.20) !important;
   border-radius:5px !important;
-  font-size:10px !important;
-  letter-spacing:.14em !important;
+  font-size:9px !important;
+  letter-spacing:.16em !important;
+  backdrop-filter:blur(14px) saturate(145%);
+  -webkit-backdrop-filter:blur(14px) saturate(145%);
+  box-shadow:0 4px 16px rgba(23,104,170,.08), 0 0 0 1px rgba(212,175,55,.10);
+  transition:all .3s ease;
+}
+.center-heading .eyebrow:hover,
+.section-heading-grid .eyebrow:hover {
+  background:rgba(238,246,253,1) !important;
+  border-color:rgba(212,175,55,.35) !important;
+  box-shadow:0 6px 20px rgba(23,104,170,.12), 0 0 20px rgba(212,175,55,.2), 0 0 0 1px rgba(212,175,55,.18);
+  transform:translateY(-2px);
 }
 .center-heading h2,
 .section-heading-grid h2 {
@@ -1238,13 +1914,27 @@ main > .section:not(.dewi-hero) .container { position:relative; z-index:1; }
 .section-heading-grid { gap:80px !important; }
 .section-heading-grid .muted { color:#66758a !important; }
 
-/* About: large architectural image with clean content panel */
+/* About: large architectural image with clean content panel - Premium Glassmorphism */
 .about-highlight {
   margin-top:50px !important;
   grid-template-columns:minmax(0,1.22fr) minmax(300px,.78fr) !important;
   border-radius:4px !important;
-  border:1px solid #dce7f2 !important;
-  box-shadow:0 28px 80px rgba(7,35,69,.13) !important;
+  border:1px solid rgba(212,175,55,.14) !important;
+  box-shadow:0 28px 80px rgba(7,35,69,.13), 0 0 0 1px rgba(212,175,55,.08) !important;
+  position: relative;
+  overflow: hidden;
+}
+.about-highlight::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(212,175,55,.06) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
   background:#fff !important;
 }
 .about-highlight > .cms-image-edit-wrap { min-height:420px !important; }
@@ -1324,16 +2014,55 @@ main > .section:not(.dewi-hero) .container { position:relative; z-index:1; }
 .testimonial-footer b { color:#10213a !important; }
 .quote-mark { color:rgba(18,117,200,.14) !important; }
 
-/* Partner / technician CTA */
+/* Partner / technician CTA - Premium Glassmorphism with Gold */
 .partner-shell {
   border-radius:4px !important;
   padding:48px !important;
-  background:#fff !important;
-  border:1px solid #dce7f2 !important;
-  box-shadow:0 26px 70px rgba(7,35,69,.10) !important;
+  background:rgba(255,255,255,.92) !important;
+  border:1px solid rgba(212,175,55,.14) !important;
+  box-shadow:0 26px 70px rgba(7,35,69,.10), 0 0 0 1px rgba(212,175,55,.08) !important;
+  backdrop-filter:blur(18px) saturate(145%);
+  -webkit-backdrop-filter:blur(18px) saturate(145%);
+  position: relative;
+  overflow: hidden;
+  transition:all .35s ease !important;
 }
-.partner-copy h2 { font-family:Georgia,"Times New Roman",serif !important; color:#10213a !important; }
-.partner-benefit { border-radius:4px !important; background:#f7fafd !important; border:1px solid #dce8f2 !important; }
+.partner-shell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(212,175,55,.08) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(30%, -30%);
+}
+.partner-shell:hover {
+  box-shadow:0 32px 85px rgba(7,35,69,.14), 0 0 40px rgba(212,175,55,.2), 0 0 0 1px rgba(212,175,55,.18) !important;
+  border-color:rgba(212,175,55,.25) !important;
+}
+.partner-copy h2 { 
+  font-family:Georgia,"Times New Roman",serif !important; 
+  color:#10213a !important;
+  position: relative;
+  z-index: 1;
+}
+.partner-benefit { 
+  border-radius:4px !important; 
+  background:rgba(247,250,253,.95) !important; 
+  border:1px solid rgba(212,175,55,.10) !important;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  position: relative;
+  z-index: 1;
+  transition:all .3s ease;
+}
+.partner-benefit:hover {
+  background:rgba(255,255,255,.98) !important;
+  border-color:rgba(212,175,55,.20) !important;
+  box-shadow:0 8px 24px rgba(212,175,55,.12);
+}
 .partner-benefit > span { color:var(--ny-orange) !important; }
 
 /* Vision */
