@@ -2,7 +2,7 @@
 importScripts("https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/12.0.0/firebase-messaging-compat.js");
 
-const VERSION = "local-1789382894336";
+const VERSION = "local-1789640918058";
 const CACHE_PREFIX = "nyalalagi";
 const SHELL_CACHE = `${CACHE_PREFIX}-shell-${VERSION}`;
 const STATIC_CACHE = `${CACHE_PREFIX}-static-${VERSION}`;

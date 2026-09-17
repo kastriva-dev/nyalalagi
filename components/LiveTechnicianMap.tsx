@@ -37,7 +37,7 @@ export default function LiveTechnicianMap({ reportId, customerId, destination }:
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
       mapObj.current = map;
       if (position) {
-        marker.current = L.circleMarker([position.latitude, position.longitude], { radius: 10, color: "#20194c", fillColor: "#ffd21a", fillOpacity: 1, weight: 3 }).addTo(map);
+        marker.current = L.circleMarker([position.latitude, position.longitude], { radius: 10, color: "#183f61", fillColor: "#246094", fillOpacity: 1, weight: 3 }).addTo(map);
       }
       if (destination) {
         destinationMarker.current = L.circleMarker([destination.latitude, destination.longitude], { radius: 8, color: "#16a36a", fillColor: "#ffffff", fillOpacity: 1, weight: 3 }).addTo(map);
@@ -54,7 +54,7 @@ export default function LiveTechnicianMap({ reportId, customerId, destination }:
       const pos: [number, number] = [position.latitude, position.longitude];
       mapObj.current.setView(pos, Math.max(mapObj.current.getZoom(), 16));
       if (marker.current) marker.current.setLatLng(pos);
-      else marker.current = L.circleMarker(pos, { radius: 10, color: "#20194c", fillColor: "#ffd21a", fillOpacity: 1, weight: 3 }).addTo(mapObj.current);
+      else marker.current = L.circleMarker(pos, { radius: 10, color: "#183f61", fillColor: "#246094", fillOpacity: 1, weight: 3 }).addTo(mapObj.current);
     });
   }, [position]);
 

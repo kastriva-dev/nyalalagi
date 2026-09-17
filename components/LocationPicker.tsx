@@ -31,7 +31,7 @@ export default function LocationPicker({ latitude, longitude, onChange }: Props)
       mapObj.current = map;
       if (latitude && longitude) {
         marker.current = L.circleMarker([latitude, longitude], {
-          radius: 10, color: "#20194c", fillColor: "#ffd21a", fillOpacity: 1, weight: 3
+          radius: 10, color: "#183f61", fillColor: "#246094", fillOpacity: 1, weight: 3
         }).addTo(map);
       }
     })();
@@ -50,7 +50,7 @@ export default function LocationPicker({ latitude, longitude, onChange }: Props)
       if (marker.current) marker.current.setLatLng(pos);
       else {
         marker.current = L.circleMarker(pos, {
-          radius: 10, color: "#20194c", fillColor: "#ffd21a", fillOpacity: 1, weight: 3
+          radius: 10, color: "#183f61", fillColor: "#246094", fillOpacity: 1, weight: 3
         }).addTo(mapObj.current);
       }
     });
