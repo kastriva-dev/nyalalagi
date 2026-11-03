@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ArrowLeft, Camera, CheckCircle2, Loader2, MapPin, Send, X, Zap, LogOut } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { auth, firebaseReady } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
+import { auth, db, firebaseReady } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { createReport } from "@/lib/report";
 import LocationPicker from "./LocationPicker";
@@ -21,6 +22,7 @@ export default function ReportPage() {
   const [name,setName] = useState("");
   const [phone,setPhone] = useState("");
   const [problem,setProblem] = useState("");
+  const [serviceOptions,setServiceOptions] = useState(problems);
   const [description,setDescription] = useState("");
   const [address,setAddress] = useState("");
   const [lat,setLat] = useState<number|null>(null);
@@ -38,6 +40,29 @@ export default function ReportPage() {
     return onAuthStateChanged(firebaseAuth, (u) => {
       if (u && !u.isAnonymous) setUser(u);
       else window.location.href = "/login";
+    });
+  }, []);
+
+  useEffect(() => {
+    if (window.localStorage.getItem("nyalalagi-admin-demo-v1:enabled") === "1") {
+      const savedDemoProducts = window.localStorage.getItem("nyalalagi-admin-demo-v1:products");
+      const demoProducts = savedDemoProducts ? JSON.parse(savedDemoProducts) : [
+        { name: "Perbaikan stop kontak", active: true },
+        { name: "Pemasangan MCB", active: true }
+      ];
+      const demoChoices = demoProducts.filter((item: any) => item.active !== false && item.name).map((item: any) => String(item.name));
+      if (demoChoices.length) setServiceOptions(demoChoices);
+      return;
+    }
+    if (!db) return;
+    getDocs(collection(db, "products")).then(snapshot => {
+      const configured = snapshot.docs
+        .map(item => item.data())
+        .filter(item => item.active !== false && typeof item.name === "string" && item.name.trim())
+        .map(item => item.name.trim());
+      if (configured.length) setServiceOptions(configured);
+    }).catch(() => {
+      // Keep the built-in choices available when the service catalogue is not configured.
     });
   }, []);
 
@@ -128,7 +153,7 @@ export default function ReportPage() {
             <div className="field">
               <label>Jenis masalah *</label>
               <div className="problem-grid">
-                {problems.map(p => <button type="button" key={p} className={`problem-option ${problem===p?"active":""}`} onClick={()=>setProblem(p)}>{p}</button>)}
+                {serviceOptions.map(p => <button type="button" key={p} className={`problem-option ${problem===p?"active":""}`} onClick={()=>setProblem(p)}>{p}</button>)}
               </div>
             </div>
             <div className="field">

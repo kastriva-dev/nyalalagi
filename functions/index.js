@@ -2,6 +2,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 
 initializeApp();
 
@@ -131,5 +132,90 @@ exports.aggregateTechnicianRating = onDocumentCreated("technicianReviews/{review
       ratingAverage: Number((nextSum / nextCount).toFixed(2)),
       updatedAt: FieldValue.serverTimestamp()
     }, { merge: true });
+  });
+});
+
+// Admin review is the only client-facing path that can credit a technician's
+// wallet. The transfer decision, balance update, top-up status and ledger entry
+// commit atomically, so retries cannot credit the same top-up twice.
+exports.reviewTechnicianTopup = onCall(async request => {
+  if (!request.auth?.uid) throw new HttpsError("unauthenticated", "Silakan masuk kembali.");
+
+  const topupId = String(request.data?.topupId || "").trim();
+  const decision = request.data?.decision;
+  if (!topupId || !["approve", "reject"].includes(decision)) {
+    throw new HttpsError("invalid-argument", "Permintaan pemeriksaan top-up tidak valid.");
+  }
+
+  const adminSnap = await db.collection("users").doc(request.auth.uid).get();
+  if (!adminSnap.exists || adminSnap.data()?.role !== "admin") {
+    throw new HttpsError("permission-denied", "Aksi ini hanya dapat dilakukan admin.");
+  }
+
+  const topupRef = db.collection("topups").doc(topupId);
+  const ledgerRef = db.collection("walletTransactions").doc(`topup_${topupId}`);
+  return db.runTransaction(async transaction => {
+    const topupSnap = await transaction.get(topupRef);
+    if (!topupSnap.exists) throw new HttpsError("not-found", "Pengajuan top-up tidak ditemukan.");
+
+    const topup = topupSnap.data();
+    const status = String(topup.status || "").trim().toLowerCase();
+    if (["approved", "confirmed", "rejected"].includes(status)) {
+      return { status: "already_processed" };
+    }
+    if (!["pending", "on check", "on_check", "waiting", "menunggu"].includes(status)) {
+      throw new HttpsError("failed-precondition", "Status pengajuan belum siap diperiksa.");
+    }
+
+    const rawAmount = topup.amount ?? topup.totalAmount ?? topup.total ?? topup.nominal;
+    const amount = Number(typeof rawAmount === "string" ? rawAmount.replace(/[^0-9.-]/g, "") : rawAmount);
+    const technicianId = String(topup.technicianId || topup.userId || topup.uid || "").trim();
+    if (!technicianId || !Number.isSafeInteger(amount) || amount <= 0 || amount > 100000000) {
+      throw new HttpsError("failed-precondition", "Data teknisi atau nominal top-up tidak valid.");
+    }
+
+    const technicianRef = db.collection("users").doc(technicianId);
+    const technicianSnap = await transaction.get(technicianRef);
+    if (!technicianSnap.exists || technicianSnap.data()?.role !== "technician") {
+      throw new HttpsError("failed-precondition", "Akun tujuan bukan teknisi yang terdaftar.");
+    }
+
+    const timestamp = FieldValue.serverTimestamp();
+    if (decision === "reject") {
+      transaction.update(topupRef, {
+        status: "rejected",
+        reviewedBy: request.auth.uid,
+        reviewedAt: timestamp,
+        updatedAt: timestamp
+      });
+      return { status: "rejected" };
+    }
+
+    const currentBalance = Number(technicianSnap.data()?.balance || 0);
+    if (!Number.isSafeInteger(currentBalance) || currentBalance < 0 || currentBalance + amount > Number.MAX_SAFE_INTEGER) {
+      throw new HttpsError("failed-precondition", "Saldo teknisi saat ini tidak valid.");
+    }
+
+    transaction.update(technicianRef, {
+      balance: currentBalance + amount,
+      updatedAt: timestamp
+    });
+    transaction.update(topupRef, {
+      status: "approved",
+      reviewedBy: request.auth.uid,
+      reviewedAt: timestamp,
+      updatedAt: timestamp
+    });
+    transaction.create(ledgerRef, {
+      type: "topup",
+      topupId,
+      technicianId,
+      amount,
+      balanceBefore: currentBalance,
+      balanceAfter: currentBalance + amount,
+      createdBy: request.auth.uid,
+      createdAt: timestamp
+    });
+    return { status: "approved", balanceAfter: currentBalance + amount };
   });
 });

@@ -243,5 +243,26 @@ service cloud.firestore {
       allow read: if signedIn();
       allow write: if isAdmin();
     }
+
+    match /subdistricts/{subdistrictId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Wallet balances are changed only by trusted Cloud Functions. Admins can
+    // review top-ups and read the append-only balance history from the console.
+    match /topups/{topupId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /walletTransactions/{transactionId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
   }
 }

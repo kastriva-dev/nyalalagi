@@ -15,6 +15,7 @@ import {
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { getUserProfile } from "@/lib/user";
+import AdminModules from "./AdminModules";
 
 type Profile = Record<string, any> & { id: string };
 const PAGE_SIZE = 20;
@@ -67,10 +68,16 @@ export default function AdminPage() {
   const [assigning, setAssigning] = useState("");
   const [updatingRole, setUpdatingRole] = useState("");
   const [balanceTotal, setBalanceTotal] = useState(0);
+  const reportError = useCallback((message: string) => setError(message), []);
+  const moduleTitles: Record<string, string> = {
+    products: "Layanan & Kerusakan", banks: "Rekening Bank", provinces: "Regional", cities: "Area",
+    subdistricts: "Kota / Kecamatan", billing: "Tarif Layanan", transactions: "Transaksi",
+    incomes: "Pendapatan", wallets: "Dompet Teknisi", topups: "Konfirmasi Top-up", reviews: "Testimoni Customer"
+  };
 
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get("tab");
-    if (tab && ["dashboard", "customers", "reports", "technicians"].includes(tab)) {
+    if (tab && ["dashboard", "customers", "reports", "technicians", "products", "banks", "provinces", "cities", "subdistricts", "billing", "transactions", "incomes", "wallets", "topups", "reviews"].includes(tab)) {
       setActive(tab);
     }
   }, []);
@@ -233,13 +240,17 @@ export default function AdminPage() {
         <button className={active === "customers" ? "active" : ""} onClick={()=>{setActive("customers");setMobileOpen(false)}}><Users size={18}/> Customer</button>
         <button className={active === "reports" ? "active" : ""} onClick={()=>{setActive("reports");setMobileOpen(false)}}><ClipboardList size={18}/> Laporan</button>
         <button className={active === "technicians" ? "active" : ""} onClick={()=>{setActive("technicians");setMobileOpen(false)}}><UserCog size={18}/> Teknisi</button>
+        <span className="admin-menu-label">MASTER DATA</span>
+        {([["products", "Layanan & Kerusakan"], ["banks", "Rekening Bank"], ["provinces", "Regional"], ["cities", "Area"], ["subdistricts", "Kota / Kecamatan"], ["billing", "Tarif Layanan"]] as const).map(([id, label]) => <button key={id} className={active === id ? "active" : ""} onClick={()=>{setActive(id);setMobileOpen(false)}}><Pencil size={17}/> {label}</button>)}
+        <span className="admin-menu-label">OPERASIONAL & KEUANGAN</span>
+        {([["transactions", "Transaksi"], ["incomes", "Pendapatan"], ["wallets", "Dompet Teknisi"], ["topups", "Konfirmasi Top-up"], ["reviews", "Testimoni Customer"]] as const).map(([id, label]) => <button key={id} className={active === id ? "active" : ""} onClick={()=>{setActive(id);setMobileOpen(false)}}><CircleDollarSign size={17}/> {label}</button>)}
         <Link href="/?adminEdit=1" className="admin-cms-link" onClick={()=>setMobileOpen(false)}><Pencil size={18}/> Edit Website <span>CMS</span></Link>
       </nav>
       <div className="admin-sidebar-bottom"><Link href="/" onClick={()=>setMobileOpen(false)}><MapPin size={17}/> Lihat Landing Page</Link><button onClick={logout}><LogOut size={17}/> Keluar</button></div>
     </aside>
     {mobileOpen && <button className="admin-overlay" aria-label="Tutup menu" onClick={()=>setMobileOpen(false)}/>} 
     <main className="admin-main">
-      <header className="admin-topbar"><button className="admin-menu-toggle" onClick={()=>setMobileOpen(true)}><Menu size={22}/></button><div><span className="admin-kicker">ADMINISTRATOR</span><h1>{active === "dashboard" ? "Dashboard Operasional" : active === "customers" ? "Data Customer" : active === "reports" ? "Data Laporan" : "Manajemen Teknisi"}</h1></div><div className="admin-top-actions"><span className="admin-status"><i/> Sistem aktif</span><Link className="admin-guide-link" href="/admin/panduan"><BookOpen size={16}/> Panduan</Link><button className="admin-logout" onClick={logout}><LogOut size={16}/> Keluar</button></div></header>
+      <header className="admin-topbar"><button className="admin-menu-toggle" onClick={()=>setMobileOpen(true)}><Menu size={22}/></button><div><span className="admin-kicker">ADMINISTRATOR</span><h1>{active === "dashboard" ? "Dashboard Operasional" : active === "customers" ? "Data Customer" : active === "reports" ? "Data Laporan" : active === "technicians" ? "Manajemen Teknisi" : moduleTitles[active]}</h1></div><div className="admin-top-actions"><span className="admin-status"><i/> Sistem aktif</span><Link className="admin-guide-link" href="/admin/panduan"><BookOpen size={16}/> Panduan</Link><button className="admin-logout" onClick={logout}><LogOut size={16}/> Keluar</button></div></header>
       {error && <div className="admin-error">{error}<button onClick={()=>setError("")}><X size={14}/></button></div>}
 
       {active === "dashboard" && <>
@@ -258,7 +269,9 @@ export default function AdminPage() {
         <section className="admin-panel admin-recent"><div className="admin-panel-title"><div><span>Customer terbaru</span><h3>5 pendaftar terakhir</h3></div><button onClick={()=>setActive("customers")}>Lihat data <ChevronRight size={16}/></button></div><div className="mini-table">{recentCustomers.map(u=><div className="mini-row" key={u.id}><div className="mini-avatar">{u.profilce_picture ? <img src={u.profilce_picture} alt=""/> : <UserRound size={16}/>}</div><div className="mini-main"><b>{u.name || "Tanpa nama"}</b><span>{u.email || "—"}</span></div><span className="admin-badge success">{u.status || "active"}</span></div>)}{!recentCustomers.length && <div className="empty-admin">Belum ada customer.</div>}</div></section>
       </>}
 
-      {active !== "dashboard" && <section className="admin-panel admin-data-panel">
+      {!["dashboard", "customers", "reports", "technicians"].includes(active) && <AdminModules module={active as any} onError={reportError}/>}
+
+      {["customers", "reports", "technicians"].includes(active) && <section className="admin-panel admin-data-panel">
         <div className="admin-panel-title"><div><span>{active === "customers" ? "Users / role=customer" : active === "technicians" ? "Users / role=technician" : "Reports collection"}</span><h3>{active === "customers" ? "Data pendaftaran customer" : active === "technicians" ? "Teknisi terdaftar" : "Assignment & laporan customer"}</h3></div>
           <div className="admin-data-actions">{(active === "customers" || active === "technicians") && <div className="admin-search"><Search size={17}/><input value={search} onChange={e=>setSearch(e.target.value)} onKeyDown={e=>e.key === "Enter" && runSearch()} placeholder="Cari berdasarkan email..."/><button onClick={runSearch}>Cari</button></div>}<span className="admin-report-count">{pageLoading ? <Loader2 size={15} className="spin"/> : `${rows.length} data halaman`}</span></div>
         </div>
