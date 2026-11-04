@@ -9,7 +9,7 @@ import {
   UserCog, UserPlus, Wrench, CheckCircle2, Clock3, Navigation, Loader2, RefreshCw, Check, MessageSquare, Ban
 } from "lucide-react";
 import {
-  collection, doc, getCountFromServer, getDocs, limit, orderBy, query, startAfter,
+  collection, doc, getCountFromServer, getDocs, limit, onSnapshot, orderBy, query, startAfter,
   updateDoc, serverTimestamp, where, type QueryDocumentSnapshot, type DocumentData
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
@@ -63,6 +63,10 @@ function distanceKm(from: any, to: any) {
 }
 function distanceText(km: number) {
   return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
+}
+function freshTechnicianLocation(technician: Profile) {
+  const lastLocationAt = toDate(technician.lastLocationAt);
+  return technician.isAvailable === true && !!coordinates(technician.longlat) && !!lastLocationAt && Date.now() - lastLocationAt.getTime() <= 30 * 60 * 1000;
 }
 
 export default function AdminPage() {
@@ -248,23 +252,17 @@ export default function AdminPage() {
   const [assignmentTechs, setAssignmentTechs] = useState<Profile[]>([]);
   useEffect(() => {
     if (!db || !me || active !== "reports") return;
-    getDocs(query(collection(db, "users"), where("role", "==", "technician"), limit(100)))
-      .then((snapshot) => {
+    return onSnapshot(
+      query(collection(db, "users"), where("role", "==", "technician"), orderBy("createdAt", "desc"), limit(100)),
+      (snapshot) => {
         const technicians = snapshot.docs
-          .map((docSnapshot) => ({
-            id: docSnapshot.id,
-            ...docSnapshot.data(),
-          }) as Profile)
+          .map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() }) as Profile)
           .filter((technician) => technician.status === "active")
-          .sort((a, b) => {
-            const nameA = String(a.name || a.email || "");
-            const nameB = String(b.name || b.email || "");
-            return nameA.localeCompare(nameB);
-          });
-
+          .sort((a, b) => String(a.name || a.email || "").localeCompare(String(b.name || b.email || "")));
         setAssignmentTechs(technicians);
-      })
-      .catch((e) => setError(e?.message || "Gagal memuat daftar teknisi."));
+      },
+      (e) => setError(e?.message || "Gagal memuat daftar teknisi.")
+    );
   }, [active, me]);
 
   async function assign(report: Profile, technicianId: string) {
@@ -357,7 +355,7 @@ export default function AdminPage() {
             const rankedTechnicians = assignmentTechs
               .map(t => ({ technician: t, distance: distanceKm(r.location, t.longlat) }))
               .sort((a,b) => (a.distance ?? Number.POSITIVE_INFINITY) - (b.distance ?? Number.POSITIVE_INFINITY));
-            const nearestTechnician = rankedTechnicians.find(item => item.distance !== null);
+            const nearestTechnician = rankedTechnicians.find(item => item.distance !== null && freshTechnicianLocation(item.technician));
             return <tr key={r.id}>
               <td><b>NYL-{String(r.id).slice(0,8).toUpperCase()}</b></td>
               <td>{r.customerName || "—"}<small className="table-sub">{r.customerPhone || "—"}</small></td>
@@ -367,10 +365,10 @@ export default function AdminPage() {
                 {["COMPLETED","CANCELLED","REJECTED"].includes(r.status) ? (r.technicianName || "—") : <>
                   <select className="input" value={r.technicianId || ""} disabled={assigning === r.id} onChange={e=>assign(r,e.target.value)} style={{minWidth:180,padding:"8px 10px"}}>
                     <option value="">{r.technicianId ? "Teknisi tersimpan" : "Pilih teknisi"}</option>
-                    {rankedTechnicians.map(({technician:t,distance})=><option key={t.id} value={t.id}>{distance !== null ? `${distanceText(distance)} · ` : "Jarak — · "}{t.name || t.email || t.id} · ${t.technicianCode || "ID belum tersedia"}</option>)}
+                    {rankedTechnicians.map(({technician:t,distance})=><option key={t.id} value={t.id}>{t.isAvailable ? "Online" : "Offline"} · {distance !== null ? `${distanceText(distance)} · ` : "Jarak — · "}{t.name || t.email || t.id} · ${t.technicianCode || "ID belum tersedia"}</option>)}
                   </select>
                   <small className="table-sub" style={{maxWidth:260,whiteSpace:"normal"}}>
-                    {!coordinates(r.location) ? "Jarak belum tersedia: laporan tidak memiliki koordinat GPS." : nearestTechnician ? <><b>Rekomendasi teknisi terdekat:</b> {nearestTechnician.technician.name || nearestTechnician.technician.email || nearestTechnician.technician.id} · {distanceText(nearestTechnician.distance!)} (jarak garis lurus)</> : "Jarak belum tersedia: teknisi belum membagikan koordinat GPS."}
+                    {!coordinates(r.location) ? "Jarak belum tersedia: laporan tidak memiliki koordinat GPS." : nearestTechnician ? <><b>Rekomendasi teknisi terdekat:</b> {nearestTechnician.technician.name || nearestTechnician.technician.email || nearestTechnician.technician.id} · {distanceText(nearestTechnician.distance!)} (garis lurus; GPS diperbarui {Math.max(0, Math.floor((Date.now() - toDate(nearestTechnician.technician.lastLocationAt)!.getTime()) / 60000))} menit lalu)</> : "Belum ada teknisi online dengan GPS terbaru. Minta teknisi aktifkan status Online dan izinkan lokasi di aplikasi (lokasi berlaku 30 menit)."}
                   </small>
                 </>}
                 {r.technicianName && <small className="table-sub">{r.technicianPhone || ""}</small>}
