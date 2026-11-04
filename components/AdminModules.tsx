@@ -68,6 +68,7 @@ export default function AdminModules({ module, onError }: { module: ModuleId; on
   const [demoMode, setDemoMode] = useState(false);
   const [demoReady, setDemoReady] = useState(false);
   const [geoSyncing, setGeoSyncing] = useState(false);
+  const [geoConfirmOpen, setGeoConfirmOpen] = useState(false);
 
   useEffect(() => {
     setDemoMode(window.localStorage.getItem(`${DEMO_STORAGE}:enabled`) === "1");
@@ -231,7 +232,6 @@ export default function AdminModules({ module, onError }: { module: ModuleId; on
 
   async function importLegacyGeography() {
     if (!db || demoMode || geoSyncing) return;
-    if (!window.confirm("Tambahkan data regional, area layanan, dan kota dari data lama? Data yang sudah cocok akan dilewati.")) return;
     setGeoSyncing(true);
     try {
       const [provinceSnap, citySnap, subdistrictSnap] = await Promise.all([
@@ -272,7 +272,7 @@ export default function AdminModules({ module, onError }: { module: ModuleId; on
         {demoMode && <button className="admin-demo-reset" onClick={resetDemo}>Reset contoh</button>}
         <button className={`admin-demo-toggle ${demoMode ? "active" : ""}`} onClick={toggleDemo}>{demoMode ? "Keluar mode demo" : "Lihat mode demo"}</button>
         <button className="admin-refresh" onClick={load} disabled={loading}><RefreshCw size={15}/> Muat ulang</button>
-        {module === "provinces" && !demoMode && <button className="admin-refresh" onClick={importLegacyGeography} disabled={geoSyncing || loading}>{geoSyncing ? <Loader2 className="spin" size={15}/> : <Plus size={15}/>} Impor data lama</button>}
+        {module === "provinces" && !demoMode && <button className="admin-refresh" onClick={() => setGeoConfirmOpen(true)} disabled={geoSyncing || loading}>{geoSyncing ? <Loader2 className="spin" size={15}/> : <Plus size={15}/>} Impor data lama</button>}
         {config.fields && module !== "billing" && <button className="admin-module-add" onClick={startCreate}><Plus size={16}/> Tambah data</button>}
       </div>
     </div>
@@ -306,6 +306,7 @@ export default function AdminModules({ module, onError }: { module: ModuleId; on
       {!loading && (module === "transactions" || module === "incomes") && <p className="admin-module-note">Data dibaca dari koleksi `reports`. Nominal hanya dihitung bila dokumen laporan memiliki field nominal.</p>}
     </div>
     {proofPreview && <div className="admin-history-backdrop" onClick={() => setProofPreview("")}><section className="admin-history-modal admin-proof-modal" role="dialog" aria-modal="true" aria-label="Bukti transfer" onClick={event => event.stopPropagation()}><header><div><span>BUKTI TRANSFER</span><h3>Periksa gambar bukti</h3></div><button aria-label="Tutup" onClick={() => setProofPreview("")}><X size={18}/></button></header><img src={proofPreview} alt="Bukti transfer top-up"/></section></div>}
+    {geoConfirmOpen && <div className="approval-modal-backdrop" onClick={() => !geoSyncing && setGeoConfirmOpen(false)}><section className="approval-modal" role="dialog" aria-modal="true" aria-labelledby="geo-import-title" onClick={event => event.stopPropagation()}><span className="admin-kicker">DATA LOKASI</span><h2 id="geo-import-title">Impor data lama?</h2><p>Data pada gambar akan ditambahkan ke Regional, Area layanan, dan Kota/Kecamatan. Data yang sudah cocok akan dilewati, tanpa mengubah data lain.</p><div className="approval-actions"><button className="btn btn-secondary" disabled={geoSyncing} onClick={() => setGeoConfirmOpen(false)}>Batal</button><button className="admin-module-add" disabled={geoSyncing} onClick={() => { setGeoConfirmOpen(false); void importLegacyGeography(); }}>{geoSyncing ? <Loader2 className="spin" size={15}/> : <Check size={15}/>} Impor data</button></div></section></div>}
     {historyFor && <div className="admin-history-backdrop" onClick={() => setHistoryFor(null)}><section className="admin-history-modal" role="dialog" aria-modal="true" aria-labelledby="wallet-history-title" onClick={event => event.stopPropagation()}><header><div><span>DOMPET TEKNISI</span><h3 id="wallet-history-title">Histori saldo · {historyFor.name || historyFor.email || historyFor.id}</h3></div><button aria-label="Tutup" onClick={() => setHistoryFor(null)}><X size={18}/></button></header><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Jenis</th><th>Nominal</th><th>Saldo setelah</th><th>Tanggal</th></tr></thead><tbody>{historyRows.map(item => <tr key={item.id}><td>{labelStatus(item.type)}</td><td>{rupiah(Number(item.amount || 0))}</td><td>{rupiah(Number(item.balanceAfter || 0))}</td><td>{formatDate(item.createdAt)}</td></tr>)}</tbody></table>{historyLoading && <div className="empty-admin">Memuat histori…</div>}{!historyLoading && !historyRows.length && <div className="empty-admin">Belum ada histori saldo.</div>}</div></section></div>}
   </section>;
 }
