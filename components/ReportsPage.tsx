@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Clock3, MapPin, RefreshCw, LogOut, Navigation, UserRound, Star, CheckCircle2, Bell, BellOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import LiveTechnicianMap from "@/components/LiveTechnicianMap";
@@ -29,6 +29,8 @@ export default function ReportsPage() {
   const [user,setUser] = useState<User|null>(null);
   const [reports,setReports] = useState<any[]>([]);
   const [loading,setLoading] = useState(true);
+  const [reportsError,setReportsError] = useState("");
+  const [reportTab,setReportTab] = useState<"active"|"history">("active");
   const [confirming,setConfirming] = useState<any>(null);
   const [rating,setRating] = useState(5);
   const [customerNote,setCustomerNote] = useState("");
@@ -54,12 +56,30 @@ export default function ReportsPage() {
 
   useEffect(() => {
     if (!db || !user) return;
-    const q = query(collection(db,"reports"), where("customerId","==",user.uid), orderBy("createdAt","desc"));
+    setLoading(true);
+    setReportsError("");
+    // Filtering on customerId alone uses Firestore's automatic single-field
+    // index. Sort locally so a missing composite index can never hide reports.
+    const q = query(collection(db,"reports"), where("customerId","==",user.uid));
     return onSnapshot(q, snap => {
-      setReports(snap.docs.map(d=>({id:d.id,...d.data()})));
+      const nextReports = snap.docs.map(d=>({id:d.id,...d.data()} as any));
+      nextReports.sort((a,b) => {
+        const time = (value:any) => value?.toMillis?.() ?? (value ? new Date(value).getTime() : 0);
+        return time(b.createdAt) - time(a.createdAt);
+      });
+      setReports(nextReports);
+      setReportsError("");
       setLoading(false);
-    }, () => setLoading(false));
+    }, err => {
+      setReportsError(err?.message || "Laporan gagal dimuat. Periksa koneksi internet lalu muat ulang halaman.");
+      setLoading(false);
+    });
   }, [user]);
+
+  const historyStatuses = ["COMPLETED", "CANCELLED", "REJECTED"];
+  const activeReports = reports.filter(r => !historyStatuses.includes(r.status));
+  const historyReports = reports.filter(r => historyStatuses.includes(r.status));
+  const visibleReports = reportTab === "active" ? activeReports : historyReports;
 
   async function enableNotifications() {
     try {
@@ -115,11 +135,15 @@ export default function ReportsPage() {
           <div><span className="eyebrow"><RefreshCw size={15}/> Realtime</span><h1 style={{fontSize:"clamp(34px,5vw,52px)",margin:"14px 0 8px"}}>Laporan Saya</h1><p className="muted">Pantau status laporan Anda dari waktu ke waktu.</p></div>
           <Link href="/lapor" className="btn btn-primary">+ Laporan Baru</Link>
         </div>
-        {error && <div style={{background:"#fff0f0",color:"#a32626",padding:13,borderRadius:13,marginTop:18}}>{error}</div>}
-        {loading ? <div className="card" style={{marginTop:25}}>Memuat laporan...</div> :
-          reports.length===0 ? <div className="card" style={{marginTop:25,textAlign:"center",padding:50}}><h3>Belum ada laporan</h3><p className="muted">Saat ada masalah listrik, buat laporan dari tombol di atas.</p></div> :
-          <div style={{display:"grid",gap:15,marginTop:25}}>
-            {reports.map(r => {
+        {(error || reportsError) && <div role="alert" style={{background:"#fff0f0",color:"#a32626",padding:13,borderRadius:13,marginTop:18}}>{error || `Laporan gagal dimuat: ${reportsError}`}</div>}
+        <div role="tablist" aria-label="Daftar laporan" style={{display:"flex",gap:10,marginTop:24,flexWrap:"wrap"}}>
+          <button type="button" role="tab" aria-selected={reportTab==="active"} onClick={()=>setReportTab("active")} className={`btn ${reportTab==="active"?"btn-primary":"btn-secondary"}`}>Laporan Aktif ({activeReports.length})</button>
+          <button type="button" role="tab" aria-selected={reportTab==="history"} onClick={()=>setReportTab("history")} className={`btn ${reportTab==="history"?"btn-primary":"btn-secondary"}`}>Riwayat ({historyReports.length})</button>
+        </div>
+        {loading ? <div className="card" style={{marginTop:16}}>Memuat laporan...</div> :
+          visibleReports.length===0 ? <div className="card" style={{marginTop:16,textAlign:"center",padding:50}}><h3>{reportTab==="active"?"Tidak ada laporan aktif":"Riwayat masih kosong"}</h3><p className="muted">{reportTab==="active"?"Laporan yang Anda kirim akan muncul di sini dan diperbarui secara realtime.":"Laporan selesai, dibatalkan, atau ditolak akan tersimpan di sini."}</p></div> :
+          <div style={{display:"grid",gap:15,marginTop:16}}>
+            {visibleReports.map(r => {
               const [label,cls]=statusLabel(r.status);
               return <article className="card" key={r.id}>
                 <div style={{display:"flex",justifyContent:"space-between",gap:15,alignItems:"start",flexWrap:"wrap"}}>
