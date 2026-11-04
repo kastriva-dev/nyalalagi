@@ -1,5 +1,6 @@
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { getStorage } = require("firebase-admin/storage");
 const { getMessaging } = require("firebase-admin/messaging");
 const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
@@ -7,6 +8,97 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 initializeApp();
 
 const db = getFirestore();
+
+// Technician-submitted wallet top-ups are created only after the server checks
+// the technician, active destination account and uploaded private receipt.
+exports.submitTechnicianTopup = onCall(async request => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "Silakan masuk kembali.");
+
+  const topupId = String(request.data?.topupId || "").trim();
+  const amount = Number(request.data?.amount);
+  const sourceType = String(request.data?.sourceType || "").trim().toLowerCase();
+  const sourceName = String(request.data?.sourceName || "").trim();
+  const transferDate = String(request.data?.transferDate || "").trim();
+  const transferTime = String(request.data?.transferTime || "").trim();
+  const bankId = String(request.data?.bankId || "").trim();
+  const proofPath = String(request.data?.proofPath || "").trim();
+
+  if (!/^[A-Za-z0-9_-]{12,80}$/.test(topupId)) {
+    throw new HttpsError("invalid-argument", "Nomor pengajuan tidak valid.");
+  }
+  if (!Number.isSafeInteger(amount) || amount < 10000 || amount > 100000000) {
+    throw new HttpsError("invalid-argument", "Nominal top-up harus Rp10.000–Rp100.000.000.");
+  }
+  if (!["bank", "ewallet"].includes(sourceType) || sourceName.length < 2 || sourceName.length > 80) {
+    throw new HttpsError("invalid-argument", "Asal bank atau e-wallet tidak valid.");
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(transferDate) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(transferTime)) {
+    throw new HttpsError("invalid-argument", "Tanggal atau waktu transfer tidak valid.");
+  }
+  const normalizedDate = new Date(`${transferDate}T00:00:00.000Z`);
+  if (Number.isNaN(normalizedDate.getTime()) || normalizedDate.toISOString().slice(0, 10) !== transferDate) {
+    throw new HttpsError("invalid-argument", "Tanggal transfer tidak valid.");
+  }
+  const parsedTransferAt = new Date(`${transferDate}T${transferTime}:00+07:00`);
+  if (Number.isNaN(parsedTransferAt.getTime()) || parsedTransferAt.getTime() > Date.now() + 5 * 60 * 1000) {
+    throw new HttpsError("invalid-argument", "Waktu transfer tidak boleh di masa depan.");
+  }
+  const allowedProofPath = new RegExp(`^wallet-topups/${uid}/${topupId}\\.(jpg|jpeg|png|webp)$`, "i");
+  if (!allowedProofPath.test(proofPath)) {
+    throw new HttpsError("invalid-argument", "Lokasi bukti transfer tidak valid.");
+  }
+
+  const [technicianSnap, bankSnap] = await Promise.all([
+    db.collection("users").doc(uid).get(),
+    db.collection("banks").doc(bankId).get()
+  ]);
+  const technician = technicianSnap.data();
+  const bank = bankSnap.data();
+  if (!technicianSnap.exists || technician?.role !== "technician" || technician?.status !== "active") {
+    throw new HttpsError("permission-denied", "Top-up hanya tersedia untuk teknisi aktif.");
+  }
+  if (!bankSnap.exists || bank?.active !== true || !bank?.name || !bank?.accountNumber || !bank?.accountName) {
+    throw new HttpsError("failed-precondition", "Rekening tujuan tidak aktif atau tidak lengkap.");
+  }
+
+  const receipt = getStorage().bucket().file(proofPath);
+  const [receiptExists] = await receipt.exists();
+  if (!receiptExists) throw new HttpsError("failed-precondition", "Bukti transfer belum berhasil diunggah.");
+  const [metadata] = await receipt.getMetadata();
+  const receiptSize = Number(metadata.size || 0);
+  if (!String(metadata.contentType || "").startsWith("image/") || receiptSize <= 0 || receiptSize > 8 * 1024 * 1024) {
+    throw new HttpsError("failed-precondition", "Bukti harus berupa gambar maksimal 8 MB.");
+  }
+
+  const topupRef = db.collection("topups").doc(topupId);
+  await db.runTransaction(async transaction => {
+    const existing = await transaction.get(topupRef);
+    if (existing.exists) throw new HttpsError("already-exists", "Pengajuan top-up dengan nomor ini sudah ada.");
+    const timestamp = FieldValue.serverTimestamp();
+    transaction.create(topupRef, {
+      technicianId: uid,
+      technicianName: String(technician.name || "Teknisi"),
+      technicianEmail: String(technician.email || ""),
+      type: "Top-up",
+      amount,
+      sourceType,
+      sourceName,
+      bankId,
+      bankName: String(bank.name),
+      accountNumber: String(bank.accountNumber),
+      accountName: String(bank.accountName),
+      transferDate,
+      transferTime,
+      proofPath,
+      status: "pending",
+      createdAt: timestamp,
+      updatedAt: timestamp
+    });
+  });
+
+  return { topupId, status: "pending" };
+});
 
 const NOTIFICATIONS = {
   SEARCHING_ENGINEER: {

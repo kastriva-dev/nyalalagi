@@ -30,6 +30,22 @@ service cloud.firestore {
       && request.resource.data.status == "active";
     }
 
+    function validPendingTechnicianProfile() {
+      return request.resource.data.keys().hasOnly([
+        "name", "email", "phone_number", "address", "province", "city",
+        "subdistrict", "profilce_picture", "certification", "role", "fcm_token", "balance",
+        "longlat", "status", "ratingCount", "ratingSum", "ratingAverage",
+        "createdAt", "updatedAt"
+      ])
+      && request.resource.data.role == "technician"
+      && request.resource.data.status == "pending"
+      && request.resource.data.balance == 0
+      && request.resource.data.ratingCount == 0
+      && request.resource.data.ratingSum == 0
+      && request.resource.data.ratingAverage == 0
+      && request.resource.data.certification is string;
+    }
+
     function validReportBase() {
       return request.resource.data.keys().hasOnly([
         "customerId", "customerName", "customerPhone", "problemType",
@@ -37,14 +53,16 @@ service cloud.firestore {
         "technicianPhone", "assignedAt", "acceptedAt", "onTheWayAt", "arrivedAt",
         "startedAt", "completedAt", "cancelledAt", "photoUrls", "beforePhotoUrls",
         "afterPhotoUrls", "completionNote", "customerConfirmed", "customerConfirmedAt",
-        "customerRating", "customerNote", "createdAt", "updatedAt", "submissionError"
+        "customerRating", "customerNote", "createdAt", "updatedAt", "submissionError",
+        "damageItems", "serviceFee", "transportFee", "grandTotal", "quoteStatus",
+        "quoteRevision", "quoteUpdatedAt"
       ]);
     }
 
     match /users/{userId} {
       allow create: if signedIn()
         && request.auth.uid == userId
-        && validCustomerProfile();
+        && (validCustomerProfile() || validPendingTechnicianProfile());
 
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
 
@@ -59,6 +77,30 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             "name", "phone_number", "address", "province", "city",
             "subdistrict", "profilce_picture", "fcm_token", "longlat", "updatedAt"
+          ])
+        ) || (
+          request.auth.uid == userId
+          && resource.data.role == "technician"
+          && resource.data.status == "active"
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.status == resource.data.status
+          && request.resource.data.balance == resource.data.balance
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "name", "phone_number", "address", "province", "city",
+            "subdistrict", "profilce_picture", "fcm_token", "longlat", "lastLocationAt", "updatedAt", "isAvailable"
+          ])
+        ) || (
+          request.auth.uid == userId
+          && resource.data.role == "technician"
+          && resource.data.status == "revision_required"
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.status == "pending"
+          && request.resource.data.balance == resource.data.balance
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "name", "phone_number", "address", "province", "city",
+            "profilce_picture", "certification", "status", "updatedAt"
           ])
         )
       );
@@ -169,6 +211,15 @@ service cloud.firestore {
       );
 
       allow delete: if isAdmin();
+
+      match /quoteHistory/{revisionId} {
+        allow read: if signedIn() && (
+          isAdmin() ||
+          get(/databases/$(database)/documents/reports/$(reportId)).data.customerId == request.auth.uid ||
+          get(/databases/$(database)/documents/reports/$(reportId)).data.technicianId == request.auth.uid
+        );
+        allow create, update, delete: if false;
+      }
     }
 
 
@@ -214,6 +265,7 @@ service cloud.firestore {
         && request.resource.data.technicianId == request.auth.uid
         && request.resource.data.customerId == get(/databases/$(database)/documents/reports/$(reportId)).data.customerId
         && get(/databases/$(database)/documents/reports/$(reportId)).data.technicianId == request.auth.uid
+        && get(/databases/$(database)/documents/reports/$(reportId)).data.status in ["ENGINEER_ON_WAY", "ARRIVED", "IN_PROGRESS"]
         && request.resource.data.latitude is number
         && request.resource.data.longitude is number
         && request.resource.data.latitude >= -90
@@ -222,6 +274,11 @@ service cloud.firestore {
         && request.resource.data.longitude <= 180;
 
       allow delete: if isAdmin() || (isTechnician() && resource.data.technicianId == request.auth.uid);
+    }
+
+    match /serviceCatalog/{itemId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     match /banks/{bankId} {
@@ -256,13 +313,18 @@ service cloud.firestore {
     // Wallet balances are changed only by trusted Cloud Functions. Admins can
     // review top-ups and read the append-only balance history from the console.
     match /topups/{topupId} {
-      allow read: if isAdmin();
+      allow read: if isAdmin() || (signedIn() && resource.data.technicianId == request.auth.uid);
       allow write: if false;
     }
 
+    match /walletTopups/{topupId} {
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create, update, delete: if false;
+    }
+
     match /walletTransactions/{transactionId} {
-      allow read: if isAdmin();
-      allow write: if false;
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create, update, delete: if false;
     }
   }
 }

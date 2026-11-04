@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { getDownloadURL, getStorage, ref } from "firebase/storage";
 import { AlertCircle, Check, Loader2, Pencil, Plus, RefreshCw, Search, Trash2, X } from "lucide-react";
 import { app, db } from "@/lib/firebase";
 
@@ -62,6 +63,7 @@ export default function AdminModules({ module, onError }: { module: ModuleId; on
   const [historyFor, setHistoryFor] = useState<Row | null>(null);
   const [historyRows, setHistoryRows] = useState<Row[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [proofPreview, setProofPreview] = useState("");
   const [demoMode, setDemoMode] = useState(false);
   const [demoReady, setDemoReady] = useState(false);
 
@@ -193,6 +195,13 @@ export default function AdminModules({ module, onError }: { module: ModuleId; on
     } catch (error: any) { onError(error?.message || "Histori saldo gagal dimuat."); }
     finally { setHistoryLoading(false); }
   }
+  async function showTopupProof(row: Row) {
+    try {
+      const url = row.proofUrl || row.receiptUrl || (row.proofPath && app ? await getDownloadURL(ref(getStorage(app), row.proofPath)) : "");
+      if (!url) throw new Error("Bukti transfer belum tersedia.");
+      setProofPreview(url);
+    } catch (error: any) { onError(error?.message || "Bukti transfer gagal dibuka."); }
+  }
   async function saveBilling() {
     if (!db && !demoMode) return;
     setSaving(true);
@@ -242,22 +251,23 @@ export default function AdminModules({ module, onError }: { module: ModuleId; on
     </form>}
 
     <div className="admin-table-wrap"><table className="admin-table"><thead><tr>
-      {(module === "transactions" ? ["Laporan", "Customer", "Layanan", "Status", "Nominal", "Dibuat"] : module === "incomes" ? ["Laporan", "Customer", "Status", "Nominal", "Selesai"] : module === "wallets" ? ["Teknisi", "Email", "Saldo", "Status", "Aksi"] : module === "topups" ? ["Teknisi", "Jenis", "Bank", "Nominal", "Status", "Bukti", "Aksi"] : module === "reviews" ? ["Laporan", "Customer", "Teknisi", "Rating", "Ulasan", "Tanggal"] : module === "billing" ? [] : [...(config.fields || []).map(f => f.label), "Aksi"]).map(column => <th key={column}>{column}</th>)}
+      {(module === "transactions" ? ["Laporan", "Customer", "Layanan", "Status", "Nominal", "Dibuat"] : module === "incomes" ? ["Laporan", "Customer", "Status", "Nominal", "Selesai"] : module === "wallets" ? ["Teknisi", "Email", "Saldo", "Status", "Aksi"] : module === "topups" ? ["Teknisi", "Sumber Transfer", "Rekening Tujuan", "Tanggal / Jam", "Nominal", "Status", "Bukti", "Aksi"] : module === "reviews" ? ["Laporan", "Customer", "Teknisi", "Rating", "Ulasan", "Tanggal"] : module === "billing" ? [] : [...(config.fields || []).map(f => f.label), "Aksi"]).map(column => <th key={column}>{column}</th>)}
     </tr></thead><tbody>
       {visibleRows.map(row => <tr key={row.id}>
         {module === "transactions" && <><td><b>NYL-{row.id.slice(0, 8).toUpperCase()}</b></td><td>{row.customerName || "—"}</td><td>{row.problemType || "—"}</td><td>{labelStatus(row.status)}</td><td>{amountOf(row) ? rupiah(amountOf(row)) : "Belum tercatat"}</td><td>{formatDate(row.createdAt)}</td></>}
         {module === "incomes" && <><td><b>NYL-{row.id.slice(0, 8).toUpperCase()}</b></td><td>{row.customerName || "—"}</td><td>{labelStatus(row.status)}</td><td>{amountOf(row) ? rupiah(amountOf(row)) : "Nominal belum tercatat"}</td><td>{formatDate(row.completedAt || row.updatedAt)}</td></>}
         {module === "wallets" && <><td>{row.name || "—"}</td><td>{row.email || "—"}</td><td><b>{rupiah(Number(row.balance || 0))}</b></td><td>{labelStatus(row.status)}</td><td><div className="admin-module-row-actions"><button onClick={() => showWalletHistory(row)}>Histori saldo</button></div></td></>}
-        {module === "topups" && <><td>{row.technicianName || row.userName || row.technicianId || row.userId || "—"}</td><td>{row.type || "Top-up"}</td><td>{row.bankName || row.bank || "—"}</td><td>{rupiah(amountOf(row))}</td><td>{labelStatus(row.status)}</td><td>{row.proofUrl || row.receiptUrl ? <a href={row.proofUrl || row.receiptUrl} target="_blank" rel="noreferrer">Lihat bukti</a> : "—"}</td><td>{isPending(row.status) ? <div className="admin-module-row-actions"><button disabled={saving} onClick={() => reviewTopup(row, "approve")}>Konfirmasi</button><button className="danger" disabled={saving} onClick={() => reviewTopup(row, "reject")}>Tolak</button></div> : "—"}</td></>}
+        {module === "topups" && <><td>{row.technicianName || row.userName || row.technicianId || row.userId || "—"}<small className="table-sub">{row.technicianEmail || ""}</small></td><td>{row.sourceName || "—"}<small className="table-sub">{labelStatus(row.sourceType)}</small></td><td>{row.bankName || row.bank || "—"}<small className="table-sub">{row.accountNumber || ""}{row.accountName ? ` · ${row.accountName}` : ""}</small></td><td>{row.transferDate || "—"}<small className="table-sub">{row.transferTime || ""}</small></td><td>{rupiah(amountOf(row))}</td><td>{labelStatus(row.status)}</td><td>{row.proofPath || row.proofUrl || row.receiptUrl ? <button className="admin-module-proof-link" onClick={() => showTopupProof(row)}>Lihat bukti</button> : "—"}</td><td>{isPending(row.status) ? <div className="admin-module-row-actions"><button disabled={saving} onClick={() => reviewTopup(row, "approve")}>Konfirmasi</button><button className="danger" disabled={saving} onClick={() => reviewTopup(row, "reject")}>Tolak</button></div> : "—"}</td></>}
         {module === "reviews" && <><td>{row.reportId || "—"}</td><td>{row.customerName || "—"}</td><td>{row.technicianId || "—"}</td><td>★ {Number(row.rating || 0)}</td><td>{row.comment || "—"}</td><td>{formatDate(row.createdAt)}</td></>}
         {config.fields && module !== "transactions" && module !== "incomes" && module !== "wallets" && module !== "topups" && module !== "billing" && <>{config.fields.map(field => <td key={field.key}>{field.type === "checkbox" ? (row[field.key] === false ? "Nonaktif" : "Aktif") : field.type === "number" && field.key.toLowerCase().includes("price") ? rupiah(Number(row[field.key] || 0)) : String(row[field.key] ?? "—")}</td>)}<td><div className="admin-module-row-actions"><button aria-label="Ubah" onClick={() => startEdit(row)}><Pencil size={14}/></button><button className="danger" aria-label="Hapus" onClick={() => remove(row)}><Trash2 size={14}/></button></div></td></>}
       </tr>)}
     </tbody></table>
       {loading && <div className="empty-admin"><Loader2 size={17} className="spin"/> Memuat data…</div>}
       {!loading && !visibleRows.length && module !== "billing" && <div className="empty-admin"><AlertCircle size={17}/> {demoMode ? "Belum ada contoh data." : "Belum ada data pada Firebase untuk bagian ini."}</div>}
-      {!loading && module === "topups" && <p className="admin-module-note">{demoMode ? "Konfirmasi hanya mengubah data contoh lokal." : "Persetujuan mengubah saldo hanya setelah admin mengonfirmasi transfer. Antrean lama dapat dimigrasikan kemudian."}</p>}
+      {!loading && module === "topups" && <p className="admin-module-note">{demoMode ? "Konfirmasi hanya mengubah data contoh lokal." : "Cocokkan nominal, rekening tujuan, tanggal dan jam, serta bukti transfer dengan mutasi rekening sebelum menyetujui. Saldo teknisi bertambah setelah persetujuan admin."}</p>}
       {!loading && (module === "transactions" || module === "incomes") && <p className="admin-module-note">Data dibaca dari koleksi `reports`. Nominal hanya dihitung bila dokumen laporan memiliki field nominal.</p>}
     </div>
+    {proofPreview && <div className="admin-history-backdrop" onClick={() => setProofPreview("")}><section className="admin-history-modal admin-proof-modal" role="dialog" aria-modal="true" aria-label="Bukti transfer" onClick={event => event.stopPropagation()}><header><div><span>BUKTI TRANSFER</span><h3>Periksa gambar bukti</h3></div><button aria-label="Tutup" onClick={() => setProofPreview("")}><X size={18}/></button></header><img src={proofPreview} alt="Bukti transfer top-up"/></section></div>}
     {historyFor && <div className="admin-history-backdrop" onClick={() => setHistoryFor(null)}><section className="admin-history-modal" role="dialog" aria-modal="true" aria-labelledby="wallet-history-title" onClick={event => event.stopPropagation()}><header><div><span>DOMPET TEKNISI</span><h3 id="wallet-history-title">Histori saldo · {historyFor.name || historyFor.email || historyFor.id}</h3></div><button aria-label="Tutup" onClick={() => setHistoryFor(null)}><X size={18}/></button></header><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Jenis</th><th>Nominal</th><th>Saldo setelah</th><th>Tanggal</th></tr></thead><tbody>{historyRows.map(item => <tr key={item.id}><td>{labelStatus(item.type)}</td><td>{rupiah(Number(item.amount || 0))}</td><td>{rupiah(Number(item.balanceAfter || 0))}</td><td>{formatDate(item.createdAt)}</td></tr>)}</tbody></table>{historyLoading && <div className="empty-admin">Memuat histori…</div>}{!historyLoading && !historyRows.length && <div className="empty-admin">Belum ada histori saldo.</div>}</div></section></div>}
   </section>;
 }

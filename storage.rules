@@ -53,5 +53,16 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*')
         && resource == null;
     }
+
+    match /wallet-topups/{userId}/{fileName} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && isTechnician()
+        && request.resource.size <= 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*')
+        && resource == null;
+      allow update, delete: if false;
+    }
   }
 }
