@@ -45,6 +45,25 @@ function toDate(value: any) {
 function dateText(value: any) {
   const d = toDate(value); return d ? d.toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" }) : "—";
 }
+function coordinates(value: any) {
+  const latitude = Number(value?.latitude);
+  const longitude = Number(value?.longitude);
+  return Number.isFinite(latitude) && Number.isFinite(longitude) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180 && !(latitude === 0 && longitude === 0)
+    ? { latitude, longitude }
+    : null;
+}
+function distanceKm(from: any, to: any) {
+  const a = coordinates(from), b = coordinates(to);
+  if (!a || !b) return null;
+  const radians = (degrees: number) => degrees * Math.PI / 180;
+  const dLat = radians(b.latitude - a.latitude);
+  const dLon = radians(b.longitude - a.longitude);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(radians(a.latitude)) * Math.cos(radians(b.latitude)) * Math.sin(dLon / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+function distanceText(km: number) {
+  return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
+}
 
 export default function AdminPage() {
   const [me, setMe] = useState<User | null>(null);
@@ -331,7 +350,35 @@ export default function AdminPage() {
         <div className="admin-table-wrap"><table className="admin-table"><thead>{active === "customers" ? <tr><th>Customer</th><th>WhatsApp</th><th>Alamat</th><th>Wilayah</th><th>Status</th><th>Role</th></tr> : active === "technicians" ? <tr><th>Teknisi</th><th>ID Teknisi</th><th>WhatsApp</th><th>Wilayah</th><th>Rating</th><th>Status</th></tr> : <tr><th>Nomor</th><th>Customer</th><th>Masalah</th><th>Status</th><th>Teknisi</th><th>Lokasi</th><th>Dibuat</th></tr>}</thead><tbody>
           {active === "customers" && rows.map(u=><tr key={u.id}><td><div className="table-person"><div className="mini-avatar">{u.profilce_picture ? <img src={u.profilce_picture} alt=""/> : <UserRound size={16}/>}</div><div><b>{u.name || "Tanpa nama"}</b><small>{u.email || "—"}</small></div></div></td><td>{u.phone_number || "—"}</td><td className="address-cell">{u.address || "—"}</td><td>{formatLocation(u)}</td><td><span className={`admin-badge ${u.status === "active" ? "success" : "muted-badge"}`}>{u.status || "—"}</span></td><td><span className="role-badge">{u.role || "customer"}</span></td></tr>)}
           {active === "technicians" && rows.map(t=><tr key={t.id}><td><div className="table-person"><div className="mini-avatar"><UserCog size={16}/></div><div><b>{t.name || "Tanpa nama"}</b><small>{t.email || "—"}</small></div></div></td><td><b>{t.technicianCode || "ID belum tersedia"}</b></td><td>{t.phone_number || "—"}</td><td>{formatLocation(t)}</td><td><b>★ {Number(t.ratingAverage || 0).toFixed(2)}</b><small className="table-sub">{Number(t.ratingCount || 0)} ulasan</small></td><td><span className={`admin-badge ${t.status === "active" ? "success" : "muted-badge"}`}>{t.status || "—"}</span></td></tr>)}
-          {active === "reports" && rows.map(r=>{const m=STATUS_META[r.status] || {label:r.status||"—",icon:Activity,cls:"muted"}; const Icon=m.icon; const price = Number(r.servicePrice || r.initialEstimate) || 0; return <tr key={r.id}><td><b>NYL-{String(r.id).slice(0,8).toUpperCase()}</b></td><td>{r.customerName || "—"}<small className="table-sub">{r.customerPhone || "—"}</small></td><td>{r.serviceName || r.problemType || "—"}<small className="table-sub">{price > 0 ? money(price) : "Harga belum tercatat"}</small></td><td><span className={`status-chip ${m.cls}`}><Icon size={12}/>{m.label}</span></td><td>{["COMPLETED","CANCELLED","REJECTED"].includes(r.status) ? (r.technicianName || "—") : <select className="input" value={r.technicianId || ""} disabled={assigning === r.id} onChange={e=>assign(r,e.target.value)} style={{minWidth:180,padding:"8px 10px"}}><option value="">{r.technicianId ? "Teknisi tersimpan" : "Pilih teknisi"}</option>{assignmentTechs.map(t=><option key={t.id} value={t.id}>{t.name || t.email || t.id} · {t.technicianCode || "ID belum tersedia"}</option>)}</select>}{r.technicianName && <small className="table-sub">{r.technicianPhone || ""}</small>}</td><td>{r.location?.address || (r.location ? `${Number(r.location.latitude).toFixed(5)}, ${Number(r.location.longitude).toFixed(5)}` : "—")}</td><td>{dateText(r.createdAt)}</td></tr>})}
+          {active === "reports" && rows.map(r=>{
+            const m=STATUS_META[r.status] || {label:r.status||"—",icon:Activity,cls:"muted"};
+            const Icon=m.icon;
+            const price = Number(r.servicePrice || r.initialEstimate) || 0;
+            const rankedTechnicians = assignmentTechs
+              .map(t => ({ technician: t, distance: distanceKm(r.location, t.longlat) }))
+              .sort((a,b) => (a.distance ?? Number.POSITIVE_INFINITY) - (b.distance ?? Number.POSITIVE_INFINITY));
+            const nearestTechnician = rankedTechnicians.find(item => item.distance !== null);
+            return <tr key={r.id}>
+              <td><b>NYL-{String(r.id).slice(0,8).toUpperCase()}</b></td>
+              <td>{r.customerName || "—"}<small className="table-sub">{r.customerPhone || "—"}</small></td>
+              <td>{r.serviceName || r.problemType || "—"}<small className="table-sub">{price > 0 ? money(price) : "Harga belum tercatat"}</small></td>
+              <td><span className={`status-chip ${m.cls}`}><Icon size={12}/>{m.label}</span></td>
+              <td>
+                {["COMPLETED","CANCELLED","REJECTED"].includes(r.status) ? (r.technicianName || "—") : <>
+                  <select className="input" value={r.technicianId || ""} disabled={assigning === r.id} onChange={e=>assign(r,e.target.value)} style={{minWidth:180,padding:"8px 10px"}}>
+                    <option value="">{r.technicianId ? "Teknisi tersimpan" : "Pilih teknisi"}</option>
+                    {rankedTechnicians.map(({technician:t,distance})=><option key={t.id} value={t.id}>{distance !== null ? `${distanceText(distance)} · ` : "Jarak — · "}{t.name || t.email || t.id} · ${t.technicianCode || "ID belum tersedia"}</option>)}
+                  </select>
+                  <small className="table-sub" style={{maxWidth:260,whiteSpace:"normal"}}>
+                    {!coordinates(r.location) ? "Jarak belum tersedia: laporan tidak memiliki koordinat GPS." : nearestTechnician ? <><b>Rekomendasi teknisi terdekat:</b> {nearestTechnician.technician.name || nearestTechnician.technician.email || nearestTechnician.technician.id} · {distanceText(nearestTechnician.distance!)} (jarak garis lurus)</> : "Jarak belum tersedia: teknisi belum membagikan koordinat GPS."}
+                  </small>
+                </>}
+                {r.technicianName && <small className="table-sub">{r.technicianPhone || ""}</small>}
+              </td>
+              <td>{r.location?.address || (r.location ? `${Number(r.location.latitude).toFixed(5)}, ${Number(r.location.longitude).toFixed(5)}` : "—")}</td>
+              <td>{dateText(r.createdAt)}</td>
+            </tr>
+          })}
         </tbody></table>{!rows.length && <div className="empty-admin">{pageLoading ? "Memuat data..." : searchApplied ? "Tidak ada data dengan email tersebut." : "Tidak ada data pada halaman ini."}</div>}</div>
         <div className="admin-pagination"><button disabled={!pageHistory.length || pageLoading} onClick={goPrev}><ChevronLeft size={16}/> Sebelumnya</button><span>Halaman {pageHistory.length + 1} · Maks. {PAGE_SIZE} data/query</span><button disabled={!nextCursor || pageLoading} onClick={goNext}>Berikutnya <ChevronRight size={16}/></button></div>
         {active === "technicians" && <div className="promote-box"><h4>Promosikan customer menjadi teknisi</h4><p>Untuk menjaga performa, daftar ini hanya mengambil maksimal 20 customer aktif terbaru.</p><button className="btn btn-secondary" onClick={()=>setActive("customers")}><UserPlus size={15}/> Buka data customer</button></div>}
