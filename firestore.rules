@@ -35,7 +35,7 @@ service cloud.firestore {
         "name", "email", "phone_number", "address", "province", "city",
         "subdistrict", "profilce_picture", "certification", "role", "fcm_token", "balance",
         "longlat", "status", "ratingCount", "ratingSum", "ratingAverage",
-        "createdAt", "updatedAt"
+        "createdAt", "updatedAt", "technicianCode"
       ])
       && request.resource.data.role == "technician"
       && request.resource.data.status == "pending"

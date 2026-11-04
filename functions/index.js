@@ -11,6 +11,46 @@ const db = getFirestore();
 
 // Technician-submitted wallet top-ups are created only after the server checks
 // the technician, active destination account and uploaded private receipt.
+
+// Allocate a short, daily sequential display code for the signed-in technician.
+// The UID remains the Firestore document key and continues to back all relationships.
+exports.allocateTechnicianCode = onCall(async request => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "Silakan masuk kembali.");
+  const userRef = db.collection("users").doc(uid);
+  const assignmentRef = db.collection("technicianCodeAssignments").doc(uid);
+  const dateKey = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Jakarta", day: "2-digit", month: "2-digit", year: "2-digit"
+  }).format(new Date()).replaceAll("/", "");
+  const counterRef = db.collection("technicianCodeCounters").doc(dateKey);
+
+  const technicianCode = await db.runTransaction(async transaction => {
+    const user = await transaction.get(userRef);
+    const assignment = await transaction.get(assignmentRef);
+    if (user.exists && user.data()?.role !== "technician") {
+      throw new HttpsError("permission-denied", "Akun ini bukan akun teknisi.");
+    }
+    const currentCode = String(user.data()?.technicianCode || assignment.data()?.technicianCode || "").trim();
+    if (currentCode) {
+      if (user.exists && !user.data()?.technicianCode) {
+        transaction.update(userRef, { technicianCode: currentCode, updatedAt: FieldValue.serverTimestamp() });
+      }
+      if (!assignment.exists) {
+        transaction.set(assignmentRef, { technicianCode: currentCode, assignedAt: FieldValue.serverTimestamp() });
+      }
+      return currentCode;
+    }
+
+    const counter = await transaction.get(counterRef);
+    const next = Number(counter.data()?.sequence || 0) + 1;
+    const allocatedCode = `Tek-${String(next).padStart(2, "0")}${dateKey}`;
+    transaction.set(counterRef, { sequence: next, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    transaction.set(assignmentRef, { technicianCode: allocatedCode, assignedAt: FieldValue.serverTimestamp() });
+    if (user.exists) transaction.update(userRef, { technicianCode: allocatedCode, updatedAt: FieldValue.serverTimestamp() });
+    return allocatedCode;
+  });
+  return { technicianCode };
+});
 exports.submitTechnicianTopup = onCall(async request => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "Silakan masuk kembali.");
