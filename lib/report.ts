@@ -35,6 +35,8 @@ export async function createReport(params: {
 }) {
   if (!db || !storage) throw new Error("Firebase belum dikonfigurasi.");
 
+  const { accuracy, ...locationFields } = params.location;
+
   // Create the report first so Storage Rules can bind every upload to this report.
   const reportRef = await addDoc(collection(db, "reports"), {
     customerId: params.uid,
@@ -42,7 +44,10 @@ export async function createReport(params: {
     customerPhone: params.phone.trim(),
     problemType: params.problemType,
     description: params.description.trim(),
-    location: params.location,
+    location: {
+      ...locationFields,
+      ...(typeof accuracy === "number" ? { accuracy } : {})
+    },
     status: "SEARCHING_ENGINEER" as ReportStatus,
     technicianId: null,
     technicianName: null,
