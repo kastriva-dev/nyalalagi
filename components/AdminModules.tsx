@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getDownloadURL, getStorage, ref } from "firebase/storage";
 import { AlertCircle, Check, Loader2, Pencil, Plus, RefreshCw, Search, Trash2, X } from "lucide-react";
 import { app, db } from "@/lib/firebase";
+import { geographyId, legacyAreaCityPairs, legacyRegionalNames } from "@/lib/legacy-geography";
 
 type Row = Record<string, any> & { id: string };
 type Field = { key: string; label: string; type?: "text" | "number" | "textarea" | "checkbox"; required?: boolean };
@@ -66,6 +67,7 @@ export default function AdminModules({ module, onError }: { module: ModuleId; on
   const [proofPreview, setProofPreview] = useState("");
   const [demoMode, setDemoMode] = useState(false);
   const [demoReady, setDemoReady] = useState(false);
+  const [geoSyncing, setGeoSyncing] = useState(false);
 
   useEffect(() => {
     setDemoMode(window.localStorage.getItem(`${DEMO_STORAGE}:enabled`) === "1");
@@ -227,6 +229,41 @@ export default function AdminModules({ module, onError }: { module: ModuleId; on
     void load();
   }
 
+  async function importLegacyGeography() {
+    if (!db || demoMode || geoSyncing) return;
+    if (!window.confirm("Tambahkan data regional, area layanan, dan kota dari data lama? Data yang sudah cocok akan dilewati.")) return;
+    setGeoSyncing(true);
+    try {
+      const [provinceSnap, citySnap, subdistrictSnap] = await Promise.all([
+        getDocs(collection(db, "provinces")),
+        getDocs(collection(db, "cities")),
+        getDocs(collection(db, "subdistricts"))
+      ]);
+      const existingProvinces = new Set(provinceSnap.docs.map(item => geographyId(String(item.data().name || ""))));
+      const existingAreas = new Set(citySnap.docs.map(item => `${geographyId(String(item.data().name || ""))}|${geographyId(String(item.data().province || ""))}`));
+      const existingCities = new Set(subdistrictSnap.docs.map(item => `${geographyId(String(item.data().name || ""))}|${geographyId(String(item.data().city || ""))}|${geographyId(String(item.data().province || ""))}`));
+      const uniqueAreas = Array.from(new Map(legacyAreaCityPairs.map(item => [`${item.area.toLowerCase()}|${item.regional.toLowerCase()}`, { name: item.area, province: item.regional }])).values());
+      const pending: Array<{ collectionName: string; id: string; data: Record<string, string> }> = [];
+      for (const name of legacyRegionalNames) if (!existingProvinces.has(geographyId(name))) pending.push({ collectionName: "provinces", id: `legacy-${geographyId(name)}`, data: { name } });
+      for (const area of uniqueAreas) {
+        const key = `${geographyId(area.name)}|${geographyId(area.province)}`;
+        if (!existingAreas.has(key)) pending.push({ collectionName: "cities", id: `legacy-${geographyId(area.name)}-${geographyId(area.province)}`, data: area });
+      }
+      for (const item of legacyAreaCityPairs) {
+        const key = `${geographyId(item.city)}|${geographyId(item.area)}|${geographyId(item.regional)}`;
+        if (!existingCities.has(key)) pending.push({ collectionName: "subdistricts", id: `legacy-${geographyId(item.area)}-${geographyId(item.city)}-${geographyId(item.regional)}`, data: { name: item.city, city: item.area, province: item.regional } });
+      }
+      if (pending.length) {
+        const batch = writeBatch(db);
+        for (const entry of pending) batch.set(doc(db, entry.collectionName, entry.id), { ...entry.data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+        await batch.commit();
+      }
+      await load();
+      window.alert(pending.length ? `${pending.length} data lokasi berhasil ditambahkan. Data yang sudah ada dilewati.` : "Semua data lokasi dari daftar lama sudah tersedia.");
+    } catch (error: any) { onError(error?.message || "Data lokasi lama gagal ditambahkan."); }
+    finally { setGeoSyncing(false); }
+  }
+
   return <section className="admin-panel admin-data-panel">
     <div className="admin-module-heading">
       <div><span>ADMINISTRASI</span><h2>{config.title}</h2><p>{config.subtitle}</p></div>
@@ -235,6 +272,7 @@ export default function AdminModules({ module, onError }: { module: ModuleId; on
         {demoMode && <button className="admin-demo-reset" onClick={resetDemo}>Reset contoh</button>}
         <button className={`admin-demo-toggle ${demoMode ? "active" : ""}`} onClick={toggleDemo}>{demoMode ? "Keluar mode demo" : "Lihat mode demo"}</button>
         <button className="admin-refresh" onClick={load} disabled={loading}><RefreshCw size={15}/> Muat ulang</button>
+        {module === "provinces" && !demoMode && <button className="admin-refresh" onClick={importLegacyGeography} disabled={geoSyncing || loading}>{geoSyncing ? <Loader2 className="spin" size={15}/> : <Plus size={15}/>} Impor data lama</button>}
         {config.fields && module !== "billing" && <button className="admin-module-add" onClick={startCreate}><Plus size={16}/> Tambah data</button>}
       </div>
     </div>

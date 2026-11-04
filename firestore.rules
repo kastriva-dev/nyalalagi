@@ -52,7 +52,7 @@ service cloud.firestore {
         "description", "location", "status", "technicianId", "technicianName",
         "technicianPhone", "assignedAt", "acceptedAt", "onTheWayAt", "arrivedAt",
         "startedAt", "completedAt", "cancelledAt", "photoUrls", "beforePhotoUrls",
-        "afterPhotoUrls", "completionNote", "customerConfirmed", "customerConfirmedAt",
+        "duringPhotoUrls", "afterPhotoUrls", "completionNote", "customerConfirmed", "customerConfirmedAt",
         "customerRating", "customerNote", "createdAt", "updatedAt", "submissionError",
         "damageItems", "serviceFee", "transportFee", "grandTotal", "quoteStatus",
         "quoteRevision", "quoteUpdatedAt"
@@ -176,7 +176,7 @@ service cloud.firestore {
           && request.resource.data.createdAt == resource.data.createdAt
           && request.resource.data.get("customerConfirmed", false) == resource.data.get("customerConfirmed", false)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            "beforePhotoUrls", "afterPhotoUrls", "completionNote", "updatedAt"
+            "beforePhotoUrls", "duringPhotoUrls", "afterPhotoUrls", "completionNote", "updatedAt"
           ])
         ) ||
         // Assigned technician can move only their own job through the approved workflow.
@@ -191,6 +191,7 @@ service cloud.firestore {
           && request.resource.data.location == resource.data.location
           && request.resource.data.photoUrls == resource.data.photoUrls
           && request.resource.data.get("beforePhotoUrls", []) == resource.data.get("beforePhotoUrls", [])
+          && request.resource.data.get("duringPhotoUrls", []) == resource.data.get("duringPhotoUrls", [])
           && request.resource.data.createdAt == resource.data.createdAt
           && request.resource.data.get("customerConfirmed", false) == resource.data.get("customerConfirmed", false)
           && (
@@ -205,7 +206,7 @@ service cloud.firestore {
           )
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             "status", "onTheWayAt", "arrivedAt", "startedAt", "completedAt", "updatedAt",
-            "beforePhotoUrls", "afterPhotoUrls", "completionNote"
+            "beforePhotoUrls", "duringPhotoUrls", "afterPhotoUrls", "completionNote"
           ])
         )
       );

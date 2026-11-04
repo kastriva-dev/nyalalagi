@@ -10,7 +10,28 @@ service firebase.storage {
       return signedIn() && userDoc().data.role == "technician" && userDoc().data.status == "active";
     }
     function reportDoc(reportId) {
+      // Cross-service lookup verifies the assigned technician and active job before upload.
       return firestore.get(/databases/(default)/documents/reports/$(reportId));
+    }
+    function canUploadTechnicianReportPhoto(reportId) {
+      return signedIn()
+        && isTechnician()
+        && reportDoc(reportId).data.technicianId == request.auth.uid
+        && reportDoc(reportId).data.status in ['ARRIVED', 'IN_PROGRESS']
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*')
+        && resource == null;
+    }
+
+    // Explicit stage paths avoid relying on a recursive wildcard's captured path.
+    match /reports/{reportId}/before/{fileName} {
+      allow create: if canUploadTechnicianReportPhoto(reportId);
+    }
+    match /reports/{reportId}/during/{fileName} {
+      allow create: if canUploadTechnicianReportPhoto(reportId);
+    }
+    match /reports/{reportId}/after/{fileName} {
+      allow create: if canUploadTechnicianReportPhoto(reportId);
     }
 
     match /reports/{reportId}/{fileName=**} {
@@ -30,6 +51,7 @@ service firebase.storage {
             && reportDoc(reportId).data.technicianId == request.auth.uid
             && (
               (fileName.matches('^before/.*') && reportDoc(reportId).data.status in ['ARRIVED', 'IN_PROGRESS'])
+              || (fileName.matches('^during/.*') && reportDoc(reportId).data.status in ['ARRIVED', 'IN_PROGRESS'])
               || (fileName.matches('^after/.*') && reportDoc(reportId).data.status in ['ARRIVED', 'IN_PROGRESS'])
             )
           )

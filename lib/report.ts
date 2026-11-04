@@ -61,6 +61,7 @@ export async function createReport(params: {
     cancelledAt: null,
     photoUrls: [],
     beforePhotoUrls: [],
+    duringPhotoUrls: [],
     afterPhotoUrls: [],
     completionNote: "",
     customerConfirmed: false,

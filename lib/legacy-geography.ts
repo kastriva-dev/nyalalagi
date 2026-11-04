@@ -1,0 +1,72 @@
+export const legacyRegionalNames = [
+  "Jawa Barat", "Jabodetabek", "BANTEN", "JAWA TENGAH", "JAWA TIMUR",
+  "D.I YOGYAKARTA", "BALI", "Sumatera Utara", "Sulawesi Selatan",
+  "Kalimantan Barat", "Kalimantan Tengah", "Kalimantan Selatan",
+  "Kalimantan Timur", "Kalimantan Utara", "Sumatera Barat", "LAMPUNG",
+  "SULAWESI TENGAH", "RIAU", "Bengkulu"
+];
+
+// Transcribed from the supplied legacy admin screenshots. Each row is an
+// Area Layanan -> Kota pair; the regional association follows the region list.
+export const legacyAreaCityPairs: Array<{ area: string; city: string; regional: string }> = [
+  { area: "Kediri", city: "Kediri", regional: "JAWA TIMUR" },
+  { area: "NGANJUK", city: "Nganjuk", regional: "JAWA TIMUR" },
+  { area: "Bengkulu", city: "Bengkulu", regional: "Bengkulu" },
+  { area: "Dumai", city: "Dumai", regional: "RIAU" },
+  { area: "Pekanbaru", city: "Pekanbaru", regional: "RIAU" },
+  { area: "Pringsewu", city: "Pringsewu", regional: "LAMPUNG" },
+  { area: "Blitar", city: "Blitar", regional: "JAWA TIMUR" },
+  { area: "MALANG", city: "MALANG", regional: "JAWA TIMUR" },
+  { area: "Metro", city: "metro", regional: "LAMPUNG" },
+  { area: "Bandar lampung", city: "bandar lampung", regional: "LAMPUNG" },
+  { area: "Palu", city: "palu", regional: "SULAWESI TENGAH" },
+  { area: "Pekalongan", city: "Pekalongan", regional: "JAWA TENGAH" },
+  { area: "Padang", city: "Padang", regional: "Sumatera Barat" },
+  { area: "Tanjung Selor", city: "Tanjung Selor", regional: "Kalimantan Utara" },
+  { area: "Samarinda", city: "Samarinda", regional: "Kalimantan Timur" },
+  { area: "Banjarbaru", city: "Banjarbaru", regional: "Kalimantan Selatan" },
+  { area: "Palangkaraya", city: "Palangkaraya", regional: "Kalimantan Tengah" },
+  { area: "Pontianak", city: "Pontianak", regional: "Kalimantan Barat" },
+  { area: "Makassar", city: "Makassar", regional: "Sulawesi Selatan" },
+  { area: "Medan", city: "Medan", regional: "Sumatera Utara" },
+  { area: "Kota Denpasar", city: "Kota Denpasar", regional: "BALI" },
+  { area: "Yogyakarta", city: "Yogyakarta", regional: "D.I YOGYAKARTA" },
+  { area: "SURABAYA", city: "Kota Surabaya", regional: "JAWA TIMUR" },
+  { area: "Banten", city: "Lebak", regional: "BANTEN" },
+  { area: "Banten", city: "Cilegon", regional: "BANTEN" },
+  { area: "Banten", city: "Serang", regional: "BANTEN" },
+  { area: "Banten", city: "Pandeglang", regional: "BANTEN" },
+  { area: "SEMARANG", city: "Kab Semarang", regional: "JAWA TENGAH" },
+  { area: "SEMARANG", city: "Kota Semarang", regional: "JAWA TENGAH" },
+  { area: "Bandung", city: "Kota Bandung", regional: "Jawa Barat" },
+  { area: "Bandung", city: "Kab Bandung", regional: "Jawa Barat" },
+  { area: "PURWAKARTA", city: "Purwakarta", regional: "Jawa Barat" },
+  { area: "KARAWANG", city: "Karawang", regional: "Jawa Barat" },
+  { area: "CIMAHI", city: "CIMAHI", regional: "Jawa Barat" },
+  { area: "BANJAR", city: "BANJAR", regional: "Jawa Barat" },
+  { area: "SUKABUMI", city: "SUKABUMI", regional: "Jawa Barat" },
+  { area: "CIANJUR", city: "CIANJUR", regional: "Jawa Barat" },
+  { area: "MAJALENGKA", city: "MAJALENGKA", regional: "Jawa Barat" },
+  { area: "SUMEDANG", city: "Sumedang", regional: "Jawa Barat" },
+  { area: "PANGANDARAN", city: "PANGANDARAN", regional: "Jawa Barat" },
+  { area: "CIAMIS", city: "CIAMIS", regional: "Jawa Barat" },
+  { area: "TASIKMALAYA", city: "TASIKMALAYA", regional: "Jawa Barat" },
+  { area: "GARUT", city: "GARUT", regional: "Jawa Barat" },
+  { area: "Jabodetabek", city: "Jakarta Pusat", regional: "Jabodetabek" },
+  { area: "Jabodetabek", city: "Jakarta Barat", regional: "Jabodetabek" },
+  { area: "Jabodetabek", city: "Jakarta Selatan", regional: "Jabodetabek" },
+  { area: "Jabodetabek", city: "Jakarta Timur", regional: "Jabodetabek" },
+  { area: "Jabodetabek", city: "Jakarta Utara", regional: "Jabodetabek" },
+  { area: "Jabodetabek", city: "Bekasi", regional: "Jabodetabek" },
+  { area: "Jabodetabek", city: "Depok", regional: "Jabodetabek" },
+  { area: "Jabodetabek", city: "Tangerang", regional: "Jabodetabek" },
+  { area: "Jabodetabek", city: "Bogor", regional: "Jabodetabek" },
+  { area: "Kuningan", city: "Kuningan", regional: "Jawa Barat" },
+  { area: "Indramayu", city: "Indramayu", regional: "Jawa Barat" },
+  { area: "Cirebon", city: "Kota Cirebon", regional: "Jawa Barat" },
+  { area: "Cirebon", city: "Kab Cirebon", regional: "Jawa Barat" }
+];
+
+export function geographyId(value: string) {
+  return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
