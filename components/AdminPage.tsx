@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   Activity, BarChart3, BookOpen, ChevronLeft, ChevronRight, CircleDollarSign, ClipboardList,
   LogOut, Menu, Search, ShieldCheck, UserRound, Users, X, MapPin, Pencil,
-  UserCog, UserPlus, Wrench, CheckCircle2, Clock3, Navigation, Loader2, RefreshCw
+  UserCog, UserPlus, Wrench, CheckCircle2, Clock3, Navigation, Loader2, RefreshCw, Check, MessageSquare, Ban
 } from "lucide-react";
 import {
   collection, doc, getCountFromServer, getDocs, limit, orderBy, query, startAfter,
@@ -67,6 +67,12 @@ export default function AdminPage() {
   const [searchApplied, setSearchApplied] = useState("");
   const [assigning, setAssigning] = useState("");
   const [updatingRole, setUpdatingRole] = useState("");
+  const [reviewQueue, setReviewQueue] = useState<Profile[]>([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState<Profile | null>(null);
+  const [reviewAction, setReviewAction] = useState<"revision_required" | "rejected" | null>(null);
+  const [reviewNote, setReviewNote] = useState("");
+  const [reviewSaving, setReviewSaving] = useState(false);
   const [balanceTotal, setBalanceTotal] = useState(0);
   const reportError = useCallback((message: string) => setError(message), []);
   const moduleTitles: Record<string, string> = {
@@ -77,7 +83,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get("tab");
-    if (tab && ["dashboard", "customers", "reports", "technicians", "products", "banks", "provinces", "cities", "subdistricts", "billing", "transactions", "incomes", "wallets", "topups", "reviews"].includes(tab)) {
+    if (tab && ["dashboard", "customers", "reports", "technicians", "approvals", "products", "banks", "provinces", "cities", "subdistricts", "billing", "transactions", "incomes", "wallets", "topups", "reviews"].includes(tab)) {
       setActive(tab);
     }
   }, []);
@@ -137,6 +143,39 @@ export default function AdminPage() {
 
   useEffect(() => { if (me && active === "dashboard") loadDashboard(); }, [me, active, loadDashboard]);
 
+  const loadReviewQueue = useCallback(async () => {
+    const firestore = db;
+    if (!firestore || !me) return;
+    setReviewLoading(true); setError("");
+    try {
+      const snap = await getDocs(query(collection(firestore, "users"), where("role", "==", "technician"), limit(500)));
+      setReviewQueue(snap.docs.map(d => ({ id: d.id, ...d.data() } as Profile)).filter(p => ["pending", "revision_required"].includes(p.status)).sort((a,b) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0)));
+    } catch (e: any) { setError(e?.message || "Gagal memuat antrean persetujuan teknisi."); }
+    finally { setReviewLoading(false); }
+  }, [me]);
+  useEffect(() => { if (active === "approvals" && me) loadReviewQueue(); }, [active, me, loadReviewQueue]);
+
+  async function approveTechnician(technician: Profile) {
+    if (!db || !me) return;
+    try {
+      setReviewSaving(true);
+      await updateDoc(doc(db, "users", technician.id), { status: "active", reviewedAt: serverTimestamp(), reviewedBy: me.email || me.uid, rejectionReason: "", updatedAt: serverTimestamp() });
+      setReviewQueue(queue => queue.filter(item => item.id !== technician.id));
+    } catch (e: any) { setError(e?.message || "Gagal menyetujui teknisi."); }
+    finally { setReviewSaving(false); }
+  }
+
+  async function saveReviewDecision() {
+    if (!db || !me || !reviewTarget || !reviewAction || !reviewNote.trim()) return;
+    try {
+      setReviewSaving(true);
+      await updateDoc(doc(db, "users", reviewTarget.id), { status: reviewAction, rejectionReason: reviewNote.trim(), reviewedAt: serverTimestamp(), reviewedBy: me.email || me.uid, updatedAt: serverTimestamp() });
+      setReviewQueue(queue => queue.filter(item => item.id !== reviewTarget.id));
+      setReviewTarget(null); setReviewAction(null); setReviewNote("");
+    } catch (e: any) { setError(e?.message || "Gagal menyimpan keputusan tinjauan."); }
+    finally { setReviewSaving(false); }
+  }
+
   const loadPage = useCallback(async (kind: "customers" | "reports" | "technicians", cursor: QueryDocumentSnapshot<DocumentData> | null = null, direction: "next" | "reset" = "reset", searchTerm = searchApplied) => {
     if (!db || !me) return;
     setPageLoading(true); setError("");
@@ -162,7 +201,7 @@ export default function AdminPage() {
   }, [me, searchApplied]);
 
   useEffect(() => {
-    if (!me || active === "dashboard") return;
+    if (!me || active === "dashboard" || active === "approvals") return;
     setRows([]); setNextCursor(null); setPageHistory([]); setSearchApplied(""); setSearch("");
     loadPage(active as any, null, "reset", "");
   }, [me, active]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -240,6 +279,7 @@ export default function AdminPage() {
         <button className={active === "customers" ? "active" : ""} onClick={()=>{setActive("customers");setMobileOpen(false)}}><Users size={18}/> Customer</button>
         <button className={active === "reports" ? "active" : ""} onClick={()=>{setActive("reports");setMobileOpen(false)}}><ClipboardList size={18}/> Laporan</button>
         <button className={active === "technicians" ? "active" : ""} onClick={()=>{setActive("technicians");setMobileOpen(false)}}><UserCog size={18}/> Teknisi</button>
+        <button className={active === "approvals" ? "active" : ""} onClick={()=>{setActive("approvals");setMobileOpen(false)}}><ShieldCheck size={18}/> Persetujuan Teknisi</button>
         <span className="admin-menu-label">MASTER DATA</span>
         {([["products", "Layanan & Kerusakan"], ["banks", "Rekening Bank"], ["provinces", "Regional"], ["cities", "Area"], ["subdistricts", "Kota / Kecamatan"], ["billing", "Tarif Layanan"]] as const).map(([id, label]) => <button key={id} className={active === id ? "active" : ""} onClick={()=>{setActive(id);setMobileOpen(false)}}><Pencil size={17}/> {label}</button>)}
         <span className="admin-menu-label">OPERASIONAL & KEUANGAN</span>
@@ -250,7 +290,7 @@ export default function AdminPage() {
     </aside>
     {mobileOpen && <button className="admin-overlay" aria-label="Tutup menu" onClick={()=>setMobileOpen(false)}/>} 
     <main className="admin-main">
-      <header className="admin-topbar"><button className="admin-menu-toggle" onClick={()=>setMobileOpen(true)}><Menu size={22}/></button><div><span className="admin-kicker">ADMINISTRATOR</span><h1>{active === "dashboard" ? "Dashboard Operasional" : active === "customers" ? "Data Customer" : active === "reports" ? "Data Laporan" : active === "technicians" ? "Manajemen Teknisi" : moduleTitles[active]}</h1></div><div className="admin-top-actions"><span className="admin-status"><i/> Sistem aktif</span><Link className="admin-guide-link" href="/admin/panduan"><BookOpen size={16}/> Panduan</Link><button className="admin-logout" onClick={logout}><LogOut size={16}/> Keluar</button></div></header>
+      <header className="admin-topbar"><button className="admin-menu-toggle" onClick={()=>setMobileOpen(true)}><Menu size={22}/></button><div><span className="admin-kicker">ADMINISTRATOR</span><h1>{active === "dashboard" ? "Dashboard Operasional" : active === "customers" ? "Data Customer" : active === "reports" ? "Data Laporan" : active === "technicians" ? "Manajemen Teknisi" : active === "approvals" ? "Persetujuan Teknisi" : moduleTitles[active]}</h1></div><div className="admin-top-actions"><span className="admin-status"><i/> Sistem aktif</span><Link className="admin-guide-link" href="/admin/panduan"><BookOpen size={16}/> Panduan</Link><button className="admin-logout" onClick={logout}><LogOut size={16}/> Keluar</button></div></header>
       {error && <div className="admin-error">{error}<button onClick={()=>setError("")}><X size={14}/></button></div>}
 
       {active === "dashboard" && <>
@@ -269,7 +309,8 @@ export default function AdminPage() {
         <section className="admin-panel admin-recent"><div className="admin-panel-title"><div><span>Customer terbaru</span><h3>5 pendaftar terakhir</h3></div><button onClick={()=>setActive("customers")}>Lihat data <ChevronRight size={16}/></button></div><div className="mini-table">{recentCustomers.map(u=><div className="mini-row" key={u.id}><div className="mini-avatar">{u.profilce_picture ? <img src={u.profilce_picture} alt=""/> : <UserRound size={16}/>}</div><div className="mini-main"><b>{u.name || "Tanpa nama"}</b><span>{u.email || "—"}</span></div><span className="admin-badge success">{u.status || "active"}</span></div>)}{!recentCustomers.length && <div className="empty-admin">Belum ada customer.</div>}</div></section>
       </>}
 
-      {!["dashboard", "customers", "reports", "technicians"].includes(active) && <AdminModules module={active as any} onError={reportError}/>}
+      {active === "approvals" && <section className="admin-panel admin-data-panel"><div className="admin-panel-title"><div><span>Pendaftaran teknisi</span><h3>Antrean tinjauan</h3></div><button onClick={loadReviewQueue}>Perbarui</button></div><p className="approval-intro">Tinjau data pendaftar, lalu setujui, minta revisi, atau tolak dengan catatan.</p>{reviewLoading ? <div className="empty-admin">Memuat...</div> : reviewQueue.map(t=><article className="approval-card" key={t.id}><div className="approval-card-head"><b>{t.name || "Tanpa nama"} · {t.email || "—"}</b><span>{t.status === "revision_required" ? "Perlu revisi" : "Menunggu"}</span></div><div className="approval-details"><div><small>WhatsApp</small><b>{t.phone_number || "—"}</b></div><div><small>Wilayah</small><b>{formatLocation(t)}</b></div><div><small>Alamat</small><b>{t.address || "—"}</b></div><div><small>Sertifikasi</small><b>{t.certification || "Belum dicantumkan"}</b></div></div>{t.rejectionReason && <p className="approval-note">Catatan: {t.rejectionReason}</p>}<div className="approval-actions"><button className="btn btn-primary" disabled={reviewSaving} onClick={()=>approveTechnician(t)}>Setujui</button><button className="btn btn-secondary" disabled={reviewSaving} onClick={()=>{setReviewTarget(t);setReviewAction("revision_required");setReviewNote("")}}>Minta revisi</button><button className="btn btn-danger" disabled={reviewSaving} onClick={()=>{setReviewTarget(t);setReviewAction("rejected");setReviewNote("")}}>Tolak</button></div></article>)}</section>}
+      {!['dashboard', 'customers', 'reports', 'technicians', 'approvals'].includes(active) && <AdminModules module={active as any} onError={reportError}/>}
 
       {["customers", "reports", "technicians"].includes(active) && <section className="admin-panel admin-data-panel">
         <div className="admin-panel-title"><div><span>{active === "customers" ? "Users / role=customer" : active === "technicians" ? "Users / role=technician" : "Reports collection"}</span><h3>{active === "customers" ? "Data pendaftaran customer" : active === "technicians" ? "Teknisi terdaftar" : "Assignment & laporan customer"}</h3></div>
@@ -285,5 +326,6 @@ export default function AdminPage() {
         {active === "customers" && rows.length > 0 && <div className="promote-box"><h4>Aksi teknisi</h4><p>Pilih customer di halaman ini untuk dipromosikan. Perubahan role langsung tersimpan ke Firestore.</p><div className="promote-list">{rows.slice(0,5).filter(c=>c.status === "active").map(c=><div key={c.id}><span><b>{c.name || "Tanpa nama"}</b><small>{c.email || "—"}</small></span><button className="btn btn-secondary" disabled={updatingRole===c.id} onClick={()=>promoteToTechnician(c)}>{updatingRole===c.id ? "Memproses..." : <><UserPlus size={14}/> Jadikan Teknisi</>}</button></div>)}</div></div>}
       </section>}
     </main>
+    {reviewTarget && reviewAction && <div className="approval-modal-backdrop"><div className="approval-modal" role="dialog" aria-modal="true"><span className="admin-kicker">TINJAUAN TEKNISI</span><h2>{reviewAction === "revision_required" ? "Minta perbaikan data" : "Tolak pendaftaran"}</h2><p>{reviewTarget.name || reviewTarget.email} · catatan tampil di aplikasi teknisi.</p><label htmlFor="approval-note">Catatan</label><textarea id="approval-note" value={reviewNote} onChange={e=>setReviewNote(e.target.value)} rows={4} maxLength={1000} placeholder="Tuliskan yang perlu diperbaiki atau alasan penolakan"/><div className="approval-actions"><button className="btn btn-secondary" onClick={()=>{setReviewTarget(null);setReviewAction(null)}}>Batal</button><button className="btn btn-primary" disabled={reviewSaving || !reviewNote.trim()} onClick={saveReviewDecision}>{reviewSaving ? "Menyimpan…" : "Kirim catatan"}</button></div></div></div>}
   </div>;
 }
