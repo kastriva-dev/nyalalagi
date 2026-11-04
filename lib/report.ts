@@ -29,6 +29,7 @@ export async function createReport(params: {
   name: string;
   phone: string;
   problemType: string;
+  servicePrice: number;
   description: string;
   location: LocationData;
   photos: File[];
@@ -43,6 +44,9 @@ export async function createReport(params: {
     customerName: params.name.trim(),
     customerPhone: params.phone.trim(),
     problemType: params.problemType,
+    serviceName: params.problemType,
+    servicePrice: params.servicePrice,
+    initialEstimate: params.servicePrice,
     description: params.description.trim(),
     location: {
       ...locationFields,

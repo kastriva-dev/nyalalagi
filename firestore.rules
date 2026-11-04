@@ -48,7 +48,7 @@ service cloud.firestore {
 
     function validReportBase() {
       return request.resource.data.keys().hasOnly([
-        "customerId", "customerName", "customerPhone", "problemType",
+        "customerId", "customerName", "customerPhone", "problemType", "serviceName", "servicePrice", "initialEstimate",
         "description", "location", "status", "technicianId", "technicianName",
         "technicianPhone", "assignedAt", "acceptedAt", "onTheWayAt", "arrivedAt",
         "startedAt", "completedAt", "cancelledAt", "photoUrls", "beforePhotoUrls",
