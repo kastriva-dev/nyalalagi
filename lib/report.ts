@@ -30,6 +30,7 @@ export async function createReport(params: {
   phone: string;
   problemType: string;
   servicePrice: number;
+  serviceItems: Array<{ id: string; name: string; unitPrice: number }>;
   description: string;
   location: LocationData;
   photos: File[];
@@ -47,6 +48,14 @@ export async function createReport(params: {
     serviceName: params.problemType,
     servicePrice: params.servicePrice,
     initialEstimate: params.servicePrice,
+    items: params.serviceItems.map(item => ({
+      id: item.id,
+      catalogItemId: item.id,
+      name: item.name,
+      unitPrice: item.unitPrice,
+      quantity: 1,
+      isAdditional: false
+    })),
     description: params.description.trim(),
     location: {
       ...locationFields,

@@ -11,13 +11,13 @@ import { signOut } from "firebase/auth";
 import { createReport } from "@/lib/report";
 import LocationPicker from "./LocationPicker";
 
-type ServiceOption = { name: string; price: number; people?: number };
+type ServiceOption = { id: string; name: string; price: number; people?: number };
 
 const problems: ServiceOption[] = [
   "Listrik padam total", "Sebagian listrik mati", "MCB turun",
   "Korsleting", "Stop kontak bermasalah", "Lampu tidak menyala",
   "Kabel / instalasi bermasalah", "Lainnya"
-].map(name => ({ name, price: 0 }));
+].map(name => ({ id: name, name, price: 0 }));
 
 function money(value: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value || 0);
@@ -27,8 +27,8 @@ export default function ReportPage() {
   const [user,setUser] = useState<User|null>(null);
   const [name,setName] = useState("");
   const [phone,setPhone] = useState("");
-  const [problem,setProblem] = useState("");
   const [serviceOptions,setServiceOptions] = useState<ServiceOption[]>(problems);
+  const [selectedServices,setSelectedServices] = useState<ServiceOption[]>([]);
   const [catalogLoading,setCatalogLoading] = useState(true);
   const [description,setDescription] = useState("");
   const [address,setAddress] = useState("");
@@ -59,7 +59,7 @@ export default function ReportPage() {
       ];
       const demoChoices: ServiceOption[] = demoProducts
         .filter((item: any) => item.active !== false && item.name)
-        .map((item: any) => ({ name: String(item.name), price: Number(item.price) || 0, people: Number(item.people) || undefined }));
+        .map((item: any) => ({ id: String(item.id || item.name), name: String(item.name), price: Number(item.price) || 0, people: Number(item.people) || undefined }));
       if (demoChoices.length) setServiceOptions(demoChoices);
       setCatalogLoading(false);
       return;
@@ -67,9 +67,9 @@ export default function ReportPage() {
     if (!db) { setCatalogLoading(false); return; }
     getDocs(collection(db, "products")).then(snapshot => {
       const configured = snapshot.docs
-        .map(item => item.data())
+        .map(doc => ({ ...doc.data(), id: doc.id } as Record<string, any> & { id: string }))
         .filter(item => item.active !== false && typeof item.name === "string" && item.name.trim())
-        .map(item => ({ name: item.name.trim(), price: Number(item.price) || 0, people: Number(item.people) || undefined }));
+        .map(item => ({ id: item.id, name: item.name.trim(), price: Number(item.price) || 0, people: Number(item.people) || undefined }));
       if (configured.length) setServiceOptions(configured);
     }).catch(() => {
       // Keep the built-in choices available when the service catalogue is not configured.
@@ -83,18 +83,27 @@ export default function ReportPage() {
     setPhotos(prev => [...prev, ...incoming].slice(0,5));
   }
 
+  function toggleService(service: ServiceOption) {
+    setSelectedServices(current => current.some(item => item.id === service.id)
+      ? current.filter(item => item.id !== service.id)
+      : [...current, service]);
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (!firebaseReady || !user) return setError("Firebase belum siap. Periksa konfigurasi .env.local dan koneksi.");
     if (!name.trim() || !phone.trim()) return setError("Nama dan nomor WhatsApp wajib diisi.");
-    if (!problem) return setError("Pilih jenis masalah listrik.");
+    if (!selectedServices.length) return setError("Pilih minimal satu jenis layanan atau kerusakan.");
     if (!lat || !lng) return setError("Silakan ambil atau pilih lokasi perbaikan di peta.");
     if (!description.trim()) return setError("Jelaskan masalah listrik Anda.");
     try {
       setSending(true);
+      const serviceTotal = selectedServices.reduce((total, service) => total + service.price, 0);
+      const serviceNames = selectedServices.map(service => service.name);
       const id = await createReport({
-        uid:user.uid, name, phone, problemType:problem, servicePrice: serviceOptions.find(item => item.name === problem)?.price || 0, description,
+        uid:user.uid, name, phone, problemType:serviceNames.join(", "), servicePrice:serviceTotal,
+        serviceItems:selectedServices.map(service => ({ id:service.id, name:service.name, unitPrice:service.price })), description,
         location:{latitude:lat, longitude:lng, accuracy, capturedAt:new Date().toISOString(), address},
         photos
       });
@@ -161,10 +170,11 @@ export default function ReportPage() {
               <input className="input" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="08xxxxxxxxxx" inputMode="tel"/>
             </div>
             <div className="field">
-              <label>Jenis masalah *</label>
+              <label>Jenis masalah / layanan * <span className="muted">(pilih satu atau lebih)</span></label>
               <div className="problem-grid">
-                {serviceOptions.map(p => <button type="button" key={p.name} disabled={catalogLoading} className={`problem-option ${problem===p.name?"active":""}`} onClick={()=>setProblem(p.name)}><span>{p.name}</span><small style={{display:"block",marginTop:5,fontWeight:700,color:"var(--blue,#2369a8)"}}>{p.price > 0 ? money(p.price) : "Harga dikonfirmasi teknisi"}</small></button>)}
+                {serviceOptions.map(p => { const selected = selectedServices.some(item => item.id === p.id); return <button type="button" key={p.id} aria-pressed={selected} disabled={catalogLoading} className={`problem-option ${selected?"active":""}`} onClick={()=>toggleService(p)}><span>{selected ? "✓ " : ""}{p.name}</span><small style={{display:"block",marginTop:5,fontWeight:700,color:"var(--blue,#2369a8)"}}>{p.price > 0 ? money(p.price) : "Harga dikonfirmasi teknisi"}</small></button>; })}
               </div>
+              {selectedServices.length > 0 && <div className="location-box" style={{marginTop:12}}><b>Estimasi {selectedServices.length} pilihan: {money(selectedServices.reduce((total,service)=>total+service.price,0))}</b><div style={{marginTop:6,fontSize:13}}>{selectedServices.map(service=><div key={service.id} style={{display:"flex",justifyContent:"space-between",gap:12}}><span>{service.name}</span><span>{money(service.price)}</span></div>)}</div></div>}
               <small className="muted">Harga katalog adalah estimasi awal. Nominal akhir dapat disesuaikan setelah teknisi memeriksa kondisi di lokasi.</small>
             </div>
             <div className="field">

@@ -253,11 +253,20 @@ export default function AdminPage() {
     const technician = assignmentTechs.find(t => t.id === technicianId); if (!technician) return;
     try {
       setAssigning(report.id);
-      const serviceSnapshot = await getDocs(query(collection(db, "products"), where("name", "==", String(report.serviceName || report.problemType || "")), limit(1)));
-      const catalogPrice = Number(serviceSnapshot.docs[0]?.data().price) || 0;
-      const servicePrice = catalogPrice || Number(report.servicePrice || report.initialEstimate) || 0;
-      await updateDoc(doc(db, "reports", report.id), { technicianId, technicianName: technician.name || "Teknisi", technicianPhone: technician.phone_number || "", serviceName: report.serviceName || report.problemType || "", servicePrice, initialEstimate: servicePrice, status: "ENGINEER_ASSIGNED", assignedAt: serverTimestamp(), updatedAt: serverTimestamp() });
-      setRows(rs => rs.map(r => r.id === report.id ? { ...r, technicianId, technicianName: technician.name, technicianPhone: technician.phone_number, servicePrice, initialEstimate: servicePrice, status: "ENGINEER_ASSIGNED" } : r));
+      const submittedItems = Array.isArray(report.items) ? report.items : [];
+      const requestedItems = submittedItems.length ? submittedItems : [{ name: report.serviceName || report.problemType, unitPrice: Number(report.servicePrice || report.initialEstimate) || 0, quantity: 1 }];
+      const serviceSnapshot = await getDocs(collection(db, "products"));
+      const catalogByName = new Map(serviceSnapshot.docs.map(item => [String(item.data().name || "").trim().toLowerCase(), item]));
+      const pricedItems = requestedItems.map((item: any, index: number) => {
+        const name = String(item.name || item.itemName || report.problemType || "Layanan").trim();
+        const catalogItem = catalogByName.get(name.toLowerCase());
+        const catalogPrice = Number(catalogItem?.data().price) || 0;
+        return { ...item, id: item.id || `${report.id}-service-${index + 1}`, catalogItemId: item.catalogItemId || catalogItem?.id || null, name, unitPrice: catalogPrice || Number(item.unitPrice) || 0, quantity: Math.max(1, Number(item.quantity) || 1), isAdditional: item.isAdditional === true };
+      });
+      const servicePrice = pricedItems.reduce((sum: number, item: any) => sum + item.unitPrice * item.quantity, 0);
+      const serviceName = pricedItems.map((item: any) => item.name).join(", ");
+      await updateDoc(doc(db, "reports", report.id), { technicianId, technicianName: technician.name || "Teknisi", technicianPhone: technician.phone_number || "", problemType: serviceName, serviceName, items: pricedItems, servicePrice, initialEstimate: servicePrice, status: "ENGINEER_ASSIGNED", assignedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+      setRows(rs => rs.map(r => r.id === report.id ? { ...r, technicianId, technicianName: technician.name, technicianPhone: technician.phone_number, problemType: serviceName, serviceName, items: pricedItems, servicePrice, initialEstimate: servicePrice, status: "ENGINEER_ASSIGNED" } : r));
     } catch (e: any) { setError(e?.message || "Gagal menugaskan teknisi."); }
     finally { setAssigning(""); }
   }
